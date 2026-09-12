@@ -1,0 +1,1 @@
+enum PaymentMode { upi, card, bank, cash }
