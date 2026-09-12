@@ -1,0 +1,39 @@
+
+class AppDimens {
+  AppDimens._();
+  static const double defaultNormalTextSize = 12;
+  static const double defaultSemiboldTextSize = 16;
+  static const double dimen0 = 0;
+  static const double dimen1 = 1;
+  static const double dimen5 = 5;
+  static const double dimen6 = 6;
+  static const double dimen8 = 8;
+  static const double dimen10 = 10;
+  static const double dimen12 = 12;
+  static const double dimen14 = 14;
+  static const double dimen15 = 15;
+  static const double dimen16 = 16;
+  static const double dimen17 = 17;
+  static const double dimen20 = 20;
+  static const double dimen24 = 24;
+  static const double dimen25 = 25;
+  static const double dimen28 = 28;
+  static const double dimen30 = 30;
+  static const double dimen34 = 34;
+  static const double dimen35 = 35;
+  static const double dimen36 = 36;
+  static const double dimen40 = 40;
+  static const double dimen45 = 45;
+  static const double dimen50 = 50;
+  static const double dimen55 = 55;
+  static const double dimen57 = 57;
+  static const double dimen60 = 60;
+  static const double dimen70 = 70;
+  static const double dimen80 = 80;
+  static const double dimen100 = 100;
+  static const double dimen120 = 120;
+  static const double dimen150 = 150;
+  static const double dimen160 = 160;
+  static const double dimen200 = 200;
+  static const double dimen210 = 210;
+}
