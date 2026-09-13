@@ -95,6 +95,19 @@ void main() {
       expect(fetched?.currencySymbol, equals('₹'));
     });
 
+    test('Saves user name and email together', () async {
+      final user = await databaseService.saveUserName(
+        'Nipul Daki',
+        email: 'nipul@example.com',
+      );
+      expect(user.name, equals('Nipul Daki'));
+      expect(user.email, equals('nipul@example.com'));
+
+      final fetched = await databaseService.getUserProfile();
+      expect(fetched?.name, equals('Nipul Daki'));
+      expect(fetched?.email, equals('nipul@example.com'));
+    });
+
     test('Updates user preferences (dark mode)', () async {
       await databaseService.saveUserName('Nipul');
       await databaseService.updateDarkMode(true);

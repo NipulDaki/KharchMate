@@ -57,7 +57,8 @@ class DatabaseService {
   Future<UserProfile> saveUserProfile(UserProfile profile) =>
       _userDao.saveUserProfile(profile);
 
-  Future<UserProfile> saveUserName(String name) => _userDao.saveUserName(name);
+  Future<UserProfile> saveUserName(String name, {String? email}) =>
+      _userDao.saveUserName(name, email: email);
 
   Future<void> updateDarkMode(bool isDarkMode) =>
       _userDao.updateDarkMode(isDarkMode);

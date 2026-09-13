@@ -63,15 +63,18 @@ class UserDao {
     }
   }
 
-  /// Convenience method to save or update the user's name during onboarding.
-  Future<UserProfile> saveUserName(String name) async {
+  /// Convenience method to save or update the user's name and optional email during onboarding.
+  Future<UserProfile> saveUserName(String name, {String? email}) async {
     final existing = await getUserProfile();
     final now = DateTime.now();
+    final cleanEmail =
+        (email != null && email.trim().isNotEmpty) ? email.trim() : null;
 
     if (existing == null) {
       return await saveUserProfile(
         UserProfile(
           name: name.trim(),
+          email: cleanEmail,
           createdAt: now,
           updatedAt: now,
         ),
@@ -79,6 +82,7 @@ class UserDao {
     } else {
       final updated = existing.copyWith(
         name: name.trim(),
+        email: cleanEmail ?? existing.email,
         updatedAt: now,
       );
       await _db.update(

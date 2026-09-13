@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/helper/validation_helper.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
@@ -19,27 +20,33 @@ class UserNameScreen extends StatefulWidget {
 class _UserNameScreenState extends State<UserNameScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   bool _isLoading = false;
 
   @override
   void dispose() {
     _nameController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
-  Future<void> _submitName() async {
+  Future<void> _submitUser() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
     final enteredName = _nameController.text.trim();
+    final enteredEmail = _emailController.text.trim();
     if (enteredName.isEmpty) return;
 
     setState(() => _isLoading = true);
 
     try {
       final dbService = serviceLocator<DatabaseService>();
-      await dbService.saveUserName(enteredName);
+      await dbService.saveUserName(
+        enteredName,
+        email: enteredEmail.isNotEmpty ? enteredEmail : null,
+      );
 
       if (mounted) {
         context.go(AppRoutes.dashboard.path);
@@ -121,7 +128,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
 
                     // Subtitle
                     Text(
-                      "Enter your name to personalize your financial dashboard and track your kharch effortlessly.",
+                      "Enter your name and email to personalize your financial dashboard and track your kharch effortlessly.",
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.5,
@@ -136,8 +143,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
                       labelText: "Your Full Name",
                       hintText: "e.g. Nipul Daki",
                       textCapitalization: TextCapitalization.words,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submitName(),
+                      textInputAction: TextInputAction.next,
                       prefixIcon: const Icon(
                         Icons.person_outline_rounded,
                         color: AppColors.primary,
@@ -153,7 +159,24 @@ class _UserNameScreenState extends State<UserNameScreen> {
                       },
                     ),
 
-                    const SizedBox(height: AppDimens.dimen40),
+                    const SizedBox(height: AppDimens.dimen20),
+
+                    // Email Input
+                    AppTextFormField(
+                      controller: _emailController,
+                      labelText: "Your Email Address",
+                      hintText: "e.g. nipul@example.com",
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _submitUser(),
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        color: AppColors.primary,
+                      ),
+                      validator: ValidationHelper.email,
+                    ),
+
+                    const SizedBox(height: AppDimens.dimen36),
 
                     // Continue Button
                     SizedBox(
@@ -168,7 +191,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
-                        onPressed: _isLoading ? null : _submitName,
+                        onPressed: _isLoading ? null : _submitUser,
                       ),
                     ),
 
