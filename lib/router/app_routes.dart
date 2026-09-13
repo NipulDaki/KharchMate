@@ -3,13 +3,17 @@ library;
 enum AppRoutes {
   root,
   splash,
-  // dashboard,
-  // transation,
-  // addTransaction,
-  // transctionDetails,
-  // report,
-  // budget,
-  // settings,
+  welcome,
+  userName,
+  dashboard,
+  transaction,
+  addTransaction,
+  transactionDetails,
+  report,
+  budget,
+  settings,
+  categories,
+  addCategory,
 }
 
 extension AppRouteExtension on AppRoutes {
@@ -19,20 +23,28 @@ extension AppRouteExtension on AppRoutes {
         return '/';
       case AppRoutes.splash:
         return '/splash';
-      // case AppRoutes.dashboard:
-      //   return '/dashboard';
-      // case AppRoutes.transation:
-      //   return '/transation';
-      // case AppRoutes.addTransaction:
-      //  return '/addTransaction';
-      // case AppRoutes.transctionDetails:
-      //   return '/transctionDetails';
-      // case AppRoutes.report:
-      //   return '/report';
-      // case AppRoutes.budget:
-      //   return '/budget';
-      // case AppRoutes.settings:
-      //   return '/setting';
+      case AppRoutes.welcome:
+        return '/welcome';
+      case AppRoutes.userName:
+        return '/user-name';
+      case AppRoutes.dashboard:
+        return '/dashboard';
+      case AppRoutes.transaction:
+        return '/transaction';
+      case AppRoutes.addTransaction:
+        return '/add-transaction';
+      case AppRoutes.transactionDetails:
+        return '/transaction-details';
+      case AppRoutes.report:
+        return '/report';
+      case AppRoutes.budget:
+        return '/budget';
+      case AppRoutes.settings:
+        return '/settings';
+      case AppRoutes.categories:
+        return '/categories';
+      case AppRoutes.addCategory:
+        return '/add-category';
     }
   }
 
@@ -42,26 +54,28 @@ extension AppRouteExtension on AppRoutes {
         return 'Root';
       case AppRoutes.splash:
         return 'Splash';
-      // case AppRoutes.dashboard:
-      //   // TODO: Handle this case.
-      //   throw UnimplementedError();
-      // case AppRoutes.transation:
-      //   // TODO: Handle this case.
-      //   throw UnimplementedError();
-      // case AppRoutes.addTransaction:
-      //   // TODO: Handle this case.
-      //   throw UnimplementedError();
-      // case AppRoutes.transctionDetails:
-      //   // TODO: Handle this case.
-      //   throw UnimplementedError();
-      // case AppRoutes.report:
-      //   // TODO: Handle this case.
-      //   throw UnimplementedError();
-      // case AppRoutes.budget:
-      //   // TODO: Handle this case.
-      //   throw UnimplementedError();
-      // case AppRoutes.settings:
-      //   return 'Setting';
+      case AppRoutes.welcome:
+        return 'Welcome';
+      case AppRoutes.userName:
+        return 'UserName';
+      case AppRoutes.dashboard:
+        return 'Dashboard';
+      case AppRoutes.transaction:
+        return 'Transaction';
+      case AppRoutes.addTransaction:
+        return 'AddTransaction';
+      case AppRoutes.transactionDetails:
+        return 'TransactionDetails';
+      case AppRoutes.report:
+        return 'Report';
+      case AppRoutes.budget:
+        return 'Budget';
+      case AppRoutes.settings:
+        return 'Settings';
+      case AppRoutes.categories:
+        return 'Categories';
+      case AppRoutes.addCategory:
+        return 'AddCategory';
     }
   }
 }

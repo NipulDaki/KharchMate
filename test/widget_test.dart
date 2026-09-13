@@ -1,30 +1,40 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:kharch_mate/database/app_database.dart';
+import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/main.dart';
+import 'package:kharch_mate/ui/splash/presentation/splash_screen.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  setUpAll(() {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  });
+
+  setUp(() async {
+    if (serviceLocator.isRegistered<AppDatabase>()) {
+      await serviceLocator.reset();
+    }
+    final appDatabase = AppDatabase();
+    await appDatabase.init(customPath: inMemoryDatabasePath);
+    await setupServiceLocator();
+  });
+
+  tearDown(() async {
+    if (serviceLocator.isRegistered<AppDatabase>()) {
+      await serviceLocator<AppDatabase>().close();
+      await serviceLocator.reset();
+    }
+  });
+
+  testWidgets('App smoke test loads MaterialApp and SplashScreen', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.byType(SplashScreen), findsOneWidget);
+    expect(find.text('Track  •  Save  •  Grow'), findsOneWidget);
+
+    // Let splash timer complete
+    await tester.pump(const Duration(seconds: 2));
   });
 }

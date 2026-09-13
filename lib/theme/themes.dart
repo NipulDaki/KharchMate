@@ -8,6 +8,48 @@ class AppThemes {
     useMaterial3: true,
     primaryColor: AppColors.primary,
     fontFamily: AppFonts.poppins,
+    scaffoldBackgroundColor: AppColors.background,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      primary: AppColors.primary,
+      surface: AppColors.white,
+      surfaceTint: Colors.transparent,
+      surfaceContainerLowest: AppColors.white,
+      surfaceContainerLow: AppColors.white,
+      surfaceContainer: AppColors.white,
+      surfaceContainerHigh: AppColors.white,
+      surfaceContainerHighest: AppColors.white,
+    ),
+    dialogTheme: const DialogThemeData(
+      backgroundColor: AppColors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(16)),
+      ),
+    ),
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: AppColors.white,
+      surfaceTintColor: Colors.transparent,
+      modalBackgroundColor: AppColors.white,
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+    ),
+    popupMenuTheme: const PopupMenuThemeData(
+      color: AppColors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 6,
+    ),
+    cardTheme: const CardThemeData(
+      color: AppColors.white,
+      surfaceTintColor: Colors.transparent,
+    ),
+    chipTheme: const ChipThemeData(
+      backgroundColor: AppColors.white,
+      surfaceTintColor: Colors.transparent,
+    ),
     dividerColor: AppColors.dividerColor,
     hintColor: AppColors.textHint,
     textSelectionTheme: const TextSelectionThemeData(
