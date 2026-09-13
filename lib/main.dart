@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/router/app_router.dart';
 import 'package:kharch_mate/theme/themes.dart';
 
-void main()  {
-  // await SystemChrome.setPreferredOrientations([
-  //   DeviceOrientation.portraitUp,
-  //   DeviceOrientation.portraitDown,
-  // ]);
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await setupServiceLocator();
 
   runApp(const MyApp());
 }

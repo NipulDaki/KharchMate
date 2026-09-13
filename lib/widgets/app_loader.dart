@@ -18,21 +18,21 @@ class AppLoader extends StatelessWidget {
 
     final loaderContent = Center(
       child: Container(
-        width: 80,
-        height: 80,
-        padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 0),
+        constraints: const BoxConstraints(minWidth: 84, minHeight: 84),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
         decoration: BoxDecoration(
           color: theme.primaryColor,
           borderRadius: BorderRadius.circular(16.0),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, 6),
             ),
           ],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Center(
@@ -70,7 +70,7 @@ class AppLoader extends StatelessWidget {
     return AbsorbPointer(
       absorbing: true,
       child: Container(
-        color: Colors.black.withOpacity(0.3), // dim background
+        color: Colors.black.withValues(alpha: 0.3), // dim background
         child: loaderContent,
       ),
     );
