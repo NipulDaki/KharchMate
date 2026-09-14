@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:kharch_mate/database/app_database.dart';
 import 'package:kharch_mate/database/daos/budget_dao.dart';
 import 'package:kharch_mate/database/daos/category_dao.dart';
@@ -22,6 +24,18 @@ class DatabaseService {
   late final TransactionDao _transactionDao;
   late final BudgetDao _budgetDao;
 
+  final StreamController<void> _transactionUpdateController =
+      StreamController<void>.broadcast();
+
+  /// Stream that emits an event whenever transactions change (insert, update, delete).
+  Stream<void> get onTransactionChanged => _transactionUpdateController.stream;
+
+  void notifyTransactionChanged() {
+    if (!_transactionUpdateController.isClosed) {
+      _transactionUpdateController.add(null);
+    }
+  }
+
   DatabaseService({AppDatabase? appDatabase})
       : _appDatabase = appDatabase ?? AppDatabase() {
     _userDao = UserDao(appDb: _appDatabase);
@@ -38,6 +52,7 @@ class DatabaseService {
 
   /// Close database connection.
   Future<void> close() async {
+    await _transactionUpdateController.close();
     await _appDatabase.close();
   }
 
@@ -112,14 +127,23 @@ class DatabaseService {
   // TRANSACTION OPERATIONS
   // ==========================================
 
-  Future<TransactionItem> insertTransaction(TransactionItem transaction) =>
-      _transactionDao.insertTransaction(transaction);
+  Future<TransactionItem> insertTransaction(TransactionItem transaction) async {
+    final result = await _transactionDao.insertTransaction(transaction);
+    notifyTransactionChanged();
+    return result;
+  }
 
-  Future<TransactionItem?> updateTransaction(TransactionItem transaction) =>
-      _transactionDao.updateTransaction(transaction);
+  Future<TransactionItem?> updateTransaction(TransactionItem transaction) async {
+    final result = await _transactionDao.updateTransaction(transaction);
+    notifyTransactionChanged();
+    return result;
+  }
 
-  Future<int> deleteTransaction(int id) =>
-      _transactionDao.deleteTransaction(id);
+  Future<int> deleteTransaction(int id) async {
+    final result = await _transactionDao.deleteTransaction(id);
+    notifyTransactionChanged();
+    return result;
+  }
 
   Future<TransactionItem?> getTransactionById(int id) =>
       _transactionDao.getTransactionById(id);
@@ -130,6 +154,9 @@ class DatabaseService {
   Future<List<TransactionItem>> getTransactions({
     TransactionType? type,
     String? searchQuery,
+    DateTime? date,
+    DateTime? startDate,
+    DateTime? endDate,
     int? month,
     int? year,
     int? categoryId,
@@ -139,6 +166,9 @@ class DatabaseService {
       _transactionDao.getTransactions(
         type: type,
         searchQuery: searchQuery,
+        date: date,
+        startDate: startDate,
+        endDate: endDate,
         month: month,
         year: year,
         categoryId: categoryId,

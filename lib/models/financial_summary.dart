@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kharch_mate/models/category.dart';
 
 class CategorySpending {
   final int categoryId;
@@ -30,27 +31,7 @@ class CategorySpending {
     return Colors.grey;
   }
 
-  IconData get iconData {
-    switch (categoryIcon.toLowerCase()) {
-      case 'fastfood':
-      case 'food':
-        return Icons.restaurant;
-      case 'home':
-      case 'rent':
-        return Icons.home_rounded;
-      case 'directions_car':
-      case 'transport':
-        return Icons.directions_car_rounded;
-      case 'shopping_bag':
-      case 'shopping':
-        return Icons.shopping_bag_rounded;
-      case 'receipt_long':
-      case 'bills':
-        return Icons.receipt_long_rounded;
-      default:
-        return Icons.category_rounded;
-    }
-  }
+  IconData get iconData => CategoryModel.iconDataFrom(categoryIcon, categoryName);
 
   String formattedAmount({String symbol = '₹'}) {
     return '$symbol${NumberFormat('#,##,###').format(amount)}';

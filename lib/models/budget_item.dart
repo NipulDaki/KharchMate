@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/database/database_constants.dart';
+import 'package:kharch_mate/models/category.dart';
 
 class BudgetItem {
   final int? id;
@@ -98,27 +99,8 @@ class BudgetItem {
     return const Color(0xFFF57C00);
   }
 
-  IconData get categoryIconData {
-    switch ((categoryIcon ?? '').toLowerCase()) {
-      case 'fastfood':
-      case 'food':
-        return Icons.restaurant;
-      case 'home':
-      case 'rent':
-        return Icons.home_rounded;
-      case 'directions_car':
-      case 'transport':
-        return Icons.directions_car_rounded;
-      case 'shopping_bag':
-      case 'shopping':
-        return Icons.shopping_bag_rounded;
-      case 'receipt_long':
-      case 'bills':
-        return Icons.receipt_long_rounded;
-      default:
-        return Icons.category_rounded;
-    }
-  }
+  IconData get categoryIconData =>
+      CategoryModel.iconDataFrom(categoryIcon, categoryName);
 
   Map<String, dynamic> toMap() {
     return {

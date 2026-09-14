@@ -11,6 +11,7 @@ import 'package:kharch_mate/ui/splash/presentation/splash_screen.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
 import 'package:kharch_mate/ui/transaction/presentation/add_transaction_screen.dart';
 import 'package:kharch_mate/ui/transaction/presentation/transaction_details_screen.dart';
+import 'package:kharch_mate/ui/reports/presentation/reports_screen.dart';
 import 'package:kharch_mate/ui/transaction/presentation/transactions_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -77,6 +78,11 @@ class AppRouter {
         builder: (context, state) => TransactionDetailsScreen(
           transaction: state.extra as TransactionItem?,
         ),
+      ),
+      GoRoute(
+        name: AppRoutes.report.name,
+        path: AppRoutes.report.path,
+        builder: (context, state) => const ReportsScreen(),
       ),
     ],
     redirect: (context, state) async {

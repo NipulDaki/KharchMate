@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kharch_mate/database/app_database.dart';
 import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/models/category.dart';
+import 'package:kharch_mate/models/financial_summary.dart';
 import 'package:kharch_mate/services/database_service.dart';
 import 'package:kharch_mate/ui/categories/presentation/add_category_screen.dart';
 import 'package:kharch_mate/ui/categories/presentation/categories_screen.dart';
@@ -145,5 +146,81 @@ void main() {
     final updated = await databaseService.getAllCategories();
     final names = updated.map((c) => c.name).toList();
     expect(names, isNot(contains('Bonus')));
+  });
+
+  test('CategoryModel.iconDataFrom resolves icons by key and fallback names correctly', () {
+    expect(CategoryModel.iconDataFrom('fastfood'), equals(Icons.restaurant));
+    expect(CategoryModel.iconDataFrom('home'), equals(Icons.home_rounded));
+    expect(CategoryModel.iconDataFrom('directions_car'), equals(Icons.directions_car_rounded));
+    expect(CategoryModel.iconDataFrom('shopping_bag'), equals(Icons.shopping_bag_rounded));
+    expect(CategoryModel.iconDataFrom('shopping_cart'), equals(Icons.shopping_cart_rounded));
+    expect(CategoryModel.iconDataFrom('receipt_long'), equals(Icons.receipt_long_rounded));
+    expect(CategoryModel.iconDataFrom('medical_services'), equals(Icons.medical_services_rounded));
+    expect(CategoryModel.iconDataFrom('sports_esports'), equals(Icons.sports_esports_rounded));
+    expect(CategoryModel.iconDataFrom('school'), equals(Icons.school_rounded));
+    expect(CategoryModel.iconDataFrom('flight'), equals(Icons.flight_rounded));
+    expect(CategoryModel.iconDataFrom('spa'), equals(Icons.spa_rounded));
+    expect(CategoryModel.iconDataFrom('account_balance'), equals(Icons.account_balance_rounded));
+    expect(CategoryModel.iconDataFrom('shield'), equals(Icons.shield_rounded));
+    expect(CategoryModel.iconDataFrom('card_giftcard'), equals(Icons.card_giftcard_rounded));
+    expect(CategoryModel.iconDataFrom('more_horiz'), equals(Icons.more_horiz_rounded));
+    expect(CategoryModel.iconDataFrom('account_balance_wallet'), equals(Icons.account_balance_wallet_rounded));
+    expect(CategoryModel.iconDataFrom('stars'), equals(Icons.stars_rounded));
+    expect(CategoryModel.iconDataFrom('trending_up'), equals(Icons.trending_up_rounded));
+    expect(CategoryModel.iconDataFrom('laptop_mac'), equals(Icons.laptop_mac_rounded));
+    expect(CategoryModel.iconDataFrom('store'), equals(Icons.store_rounded));
+
+    // Fallback when icon is generic 'category' or null
+    expect(CategoryModel.iconDataFrom('category', 'Groceries'), equals(Icons.shopping_cart_rounded));
+    expect(CategoryModel.iconDataFrom(null, 'Medical Checkup'), equals(Icons.medical_services_rounded));
+    expect(CategoryModel.iconDataFrom('', 'Flight Tickets'), equals(Icons.flight_rounded));
+    expect(CategoryModel.iconDataFrom('category', 'Tuition Fee'), equals(Icons.school_rounded));
+    expect(CategoryModel.iconDataFrom('category', 'Electricity Bill'), equals(Icons.receipt_long_rounded));
+    expect(CategoryModel.iconDataFrom('category', 'Gaming Console'), equals(Icons.sports_esports_rounded));
+    expect(CategoryModel.iconDataFrom('category', 'Hair Salon'), equals(Icons.spa_rounded));
+    expect(CategoryModel.iconDataFrom('category', 'Car Fuel'), equals(Icons.directions_car_rounded));
+  });
+
+  test('CategorySpending.iconData correctly resolves icons for various categories', () {
+    const spending1 = CategorySpending(
+      categoryId: 1,
+      categoryName: 'Groceries',
+      categoryIcon: 'shopping_cart',
+      categoryColor: '#FF9800',
+      amount: 5000,
+      percentage: 50,
+    );
+    expect(spending1.iconData, equals(Icons.shopping_cart_rounded));
+
+    const spending2 = CategorySpending(
+      categoryId: 2,
+      categoryName: 'Doctor & Hospital',
+      categoryIcon: 'medical_services',
+      categoryColor: '#EF5350',
+      amount: 3000,
+      percentage: 30,
+    );
+    expect(spending2.iconData, equals(Icons.medical_services_rounded));
+
+    const spending3 = CategorySpending(
+      categoryId: 3,
+      categoryName: 'Flight Tickets',
+      categoryIcon: 'flight',
+      categoryColor: '#42A5F5',
+      amount: 2000,
+      percentage: 20,
+    );
+    expect(spending3.iconData, equals(Icons.flight_rounded));
+
+    // Fallback based on name when icon is category
+    const spending4 = CategorySpending(
+      categoryId: 4,
+      categoryName: 'Apartment Rent',
+      categoryIcon: 'category',
+      categoryColor: '#26A69A',
+      amount: 15000,
+      percentage: 80,
+    );
+    expect(spending4.iconData, equals(Icons.home_rounded));
   });
 }
