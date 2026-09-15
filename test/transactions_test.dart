@@ -368,4 +368,159 @@ void main() {
     final fetchAfterDelete = await databaseService.getTransactionById(item.id!);
     expect(fetchAfterDelete, isNull);
   });
+
+  test('DatabaseService filters transactions by exact date', () async {
+    final now = DateTime(2026, 9, 14, 10, 30);
+    final yesterday = DateTime(2026, 9, 13, 14, 15);
+    final expenseCats = await databaseService.getExpenseCategories();
+    final foodCat = expenseCats.firstWhere((c) => c.name == 'Food');
+
+    await databaseService.insertTransaction(
+      TransactionItem(
+        title: 'Today Lunch',
+        amount: 300,
+        type: TransactionType.expense,
+        categoryId: foodCat.id!,
+        categoryName: foodCat.name,
+        categoryIcon: foodCat.icon,
+        categoryColor: foodCat.color,
+        paymentMethodName: PaymentMode.cash.displayName,
+        date: now,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+
+    await databaseService.insertTransaction(
+      TransactionItem(
+        title: 'Yesterday Dinner',
+        amount: 800,
+        type: TransactionType.expense,
+        categoryId: foodCat.id!,
+        categoryName: foodCat.name,
+        categoryIcon: foodCat.icon,
+        categoryColor: foodCat.color,
+        paymentMethodName: PaymentMode.upi.displayName,
+        date: yesterday,
+        createdAt: yesterday,
+        updatedAt: yesterday,
+      ),
+    );
+
+    // Query for 14 Sep 2026
+    final todayResults = await databaseService.getTransactions(
+      date: DateTime(2026, 9, 14),
+    );
+    expect(todayResults.length, equals(1));
+    expect(todayResults.first.title, equals('Today Lunch'));
+
+    // Query for 13 Sep 2026
+    final yesterdayResults = await databaseService.getTransactions(
+      date: DateTime(2026, 9, 13),
+    );
+    expect(yesterdayResults.length, equals(1));
+    expect(yesterdayResults.first.title, equals('Yesterday Dinner'));
+
+    // Query for 12 Sep 2026
+    final emptyResults = await databaseService.getTransactions(
+      date: DateTime(2026, 9, 12),
+    );
+    expect(emptyResults, isEmpty);
+  });
+
+  testWidgets(
+    'TransactionsScreen allows selecting specific date filter and clearing it',
+    (WidgetTester tester) async {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day, 12, 0);
+      final yesterday = today.subtract(const Duration(days: 1));
+
+      await tester.runAsync(() async {
+        final expenseCats = await databaseService.getExpenseCategories();
+        final foodCat = expenseCats.firstWhere((c) => c.name == 'Food');
+
+        await databaseService.insertTransaction(
+          TransactionItem(
+            title: 'Lunch Today',
+            amount: 250.0,
+            type: TransactionType.expense,
+            categoryId: foodCat.id!,
+            categoryName: foodCat.name,
+            categoryIcon: foodCat.icon,
+            categoryColor: foodCat.color,
+            paymentMethodName: PaymentMode.cash.displayName,
+            date: today,
+            createdAt: today,
+            updatedAt: today,
+          ),
+        );
+
+        await databaseService.insertTransaction(
+          TransactionItem(
+            title: 'Dinner Yesterday',
+            amount: 600.0,
+            type: TransactionType.expense,
+            categoryId: foodCat.id!,
+            categoryName: foodCat.name,
+            categoryIcon: foodCat.icon,
+            categoryColor: foodCat.color,
+            paymentMethodName: PaymentMode.card.displayName,
+            date: yesterday,
+            createdAt: yesterday,
+            updatedAt: yesterday,
+          ),
+        );
+      });
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: TransactionsScreen(),
+        ),
+      );
+
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future.delayed(const Duration(milliseconds: 400));
+      });
+      await tester.pump();
+
+      // Both transactions initially visible
+      expect(find.text('Lunch Today'), findsOneWidget);
+      expect(find.text('Dinner Yesterday'), findsOneWidget);
+
+      // Tap Date filter button (calendar icon)
+      await tester.tap(find.byIcon(Icons.event_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Bottom sheet with 'Filter by Date' opens
+      expect(find.text('Filter by Date'), findsOneWidget);
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('Yesterday'), findsOneWidget);
+
+      // Tap 'Yesterday'
+      await tester.tap(find.text('Yesterday'));
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pump();
+
+      // Only yesterday's transaction should be displayed
+      expect(find.text('Dinner Yesterday'), findsOneWidget);
+      expect(find.text('Lunch Today'), findsNothing);
+
+      // Clear the date filter via the '✕' icon
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pump();
+
+      // Both transactions should be visible again
+      expect(find.text('Lunch Today'), findsOneWidget);
+      expect(find.text('Dinner Yesterday'), findsOneWidget);
+    },
+  );
 }

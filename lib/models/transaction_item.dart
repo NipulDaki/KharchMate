@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/database/database_constants.dart';
+import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 
 enum TransactionType {
@@ -159,52 +160,13 @@ class TransactionItem {
   }
 
   IconData get categoryIconData {
-    final key = (categoryIcon ?? categoryName ?? '').toLowerCase();
-    switch (key) {
-      case 'fastfood':
-      case 'food':
-      case 'restaurant':
-        return Icons.restaurant;
-      case 'home':
-      case 'rent':
-        return Icons.home_rounded;
-      case 'directions_car':
-      case 'transport':
-      case 'car':
-        return Icons.directions_car_rounded;
-      case 'shopping_bag':
-      case 'shopping':
-        return Icons.shopping_bag_rounded;
-      case 'receipt_long':
-      case 'receipt':
-      case 'bills':
-        return Icons.receipt_long_rounded;
-      case 'movie':
-      case 'entertainment':
-        return Icons.movie_rounded;
-      case 'medical_services':
-      case 'health':
-        return Icons.medical_services_rounded;
-      case 'account_balance_wallet':
-      case 'salary':
-        return Icons.arrow_upward_rounded;
-      case 'laptop_mac':
-      case 'freelance':
-        return Icons.laptop_mac_rounded;
-      case 'store':
-      case 'business':
-        return Icons.store_rounded;
-      case 'trending_up':
-      case 'investment':
-        return Icons.trending_up_rounded;
-      case 'card_giftcard':
-      case 'gift':
-        return Icons.card_giftcard_rounded;
-      default:
-        return type.isIncome
-            ? Icons.arrow_upward_rounded
-            : Icons.receipt_long_rounded;
+    final icon = CategoryModel.iconDataFrom(categoryIcon, categoryName);
+    if (icon != Icons.category_rounded) {
+      return icon;
     }
+    return type.isIncome
+        ? Icons.arrow_upward_rounded
+        : Icons.receipt_long_rounded;
   }
 
   Map<String, dynamic> toMap() {

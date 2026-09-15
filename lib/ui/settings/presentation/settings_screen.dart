@@ -100,10 +100,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: ListView.separated(
                     shrinkWrap: true,
                     itemCount: currencies.length,
-                    separatorBuilder: (_, _) => const Divider(
-                      height: 1,
-                      color: AppColors.dividerColor,
-                    ),
+                    separatorBuilder: (_, _) =>
+                        const Divider(height: 1, color: AppColors.dividerColor),
                     itemBuilder: (context, index) {
                       final item = currencies[index];
                       final isSelected =
@@ -164,9 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.white,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Logout',
           style: TextStyle(
@@ -214,9 +210,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.white,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           title,
           style: const TextStyle(
@@ -231,10 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
-              'OK',
-              style: TextStyle(color: AppColors.primary),
-            ),
+            child: const Text('OK', style: TextStyle(color: AppColors.primary)),
           ),
         ],
       ),
@@ -448,11 +439,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: Color(0xFF1E88E5),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.person,
-              color: AppColors.white,
-              size: 32,
-            ),
+            child: const Icon(Icons.person, color: AppColors.white, size: 32),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -574,11 +561,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: Color(0xFFF0F4F8),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: AppColors.textPrimary,
-            ),
+            child: Icon(icon, size: 20, color: AppColors.textPrimary),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -615,9 +598,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildNavItem(Icons.home_rounded, "Home", false, () {
               context.go(AppRoutes.dashboard.path);
             }),
-            _buildNavItem(Icons.receipt_long_rounded, "Transactions", false, () {
-              context.push(AppRoutes.transaction.path);
-            }),
+            _buildNavItem(
+              Icons.receipt_long_rounded,
+              "Transactions",
+              false,
+              () {
+                context.push(AppRoutes.transaction.path);
+              },
+            ),
             const SizedBox(width: 48), // FAB center space
             _buildNavItem(Icons.bar_chart_rounded, "Reports", false, () {
               context.push(AppRoutes.report.path);

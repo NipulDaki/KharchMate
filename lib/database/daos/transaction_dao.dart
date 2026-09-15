@@ -102,10 +102,13 @@ class TransactionDao {
     return results.map(TransactionItem.fromMap).toList();
   }
 
-  /// Retrieves transactions with filters (type, search, month, year, category).
+  /// Retrieves transactions with filters (type, search, date, month, year, category).
   Future<List<TransactionItem>> getTransactions({
     TransactionType? type,
     String? searchQuery,
+    DateTime? date,
+    DateTime? startDate,
+    DateTime? endDate,
     int? month,
     int? year,
     int? categoryId,
@@ -125,7 +128,34 @@ class TransactionDao {
       args.add(categoryId);
     }
 
-    if (year != null) {
+    if (date != null) {
+      final y = date.year.toString();
+      final m = date.month.toString().padLeft(2, '0');
+      final d = date.day.toString().padLeft(2, '0');
+      conditions.add(
+        "strftime('%Y-%m-%d', t.${DatabaseConstants.colTransactionDate}) = ?",
+      );
+      args.add('$y-$m-$d');
+    } else if (startDate != null || endDate != null) {
+      if (startDate != null) {
+        final y = startDate.year.toString();
+        final m = startDate.month.toString().padLeft(2, '0');
+        final d = startDate.day.toString().padLeft(2, '0');
+        conditions.add(
+          "strftime('%Y-%m-%d', t.${DatabaseConstants.colTransactionDate}) >= ?",
+        );
+        args.add('$y-$m-$d');
+      }
+      if (endDate != null) {
+        final y = endDate.year.toString();
+        final m = endDate.month.toString().padLeft(2, '0');
+        final d = endDate.day.toString().padLeft(2, '0');
+        conditions.add(
+          "strftime('%Y-%m-%d', t.${DatabaseConstants.colTransactionDate}) <= ?",
+        );
+        args.add('$y-$m-$d');
+      }
+    } else if (year != null) {
       if (month != null) {
         final monthStr = month.toString().padLeft(2, '0');
         conditions.add(

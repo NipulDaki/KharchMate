@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -21,18 +24,31 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late final DatabaseService _dbService;
+  StreamSubscription<void>? _transactionSubscription;
   UserProfile? _userProfile;
   FinancialSummary _summary = FinancialSummary.empty();
   List<TransactionItem> _recentTransactions = [];
   bool _isLoading = true;
   bool _isBalanceVisible = true;
   DateTime _selectedDate = DateTime.now();
+  int _touchedPieIndex = -1;
 
   @override
   void initState() {
     super.initState();
     _dbService = serviceLocator<DatabaseService>();
     _loadDashboardData();
+    _transactionSubscription = _dbService.onTransactionChanged.listen((_) {
+      if (mounted) {
+        _loadDashboardData();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _transactionSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadDashboardData() async {
@@ -51,6 +67,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _userProfile = user;
           _summary = summary;
           _recentTransactions = recent;
+          _touchedPieIndex = -1;
           _isLoading = false;
         });
       }
@@ -84,8 +101,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         shape: const CircleBorder(),
         elevation: 4,
         onPressed: () async {
-          final result = await context.push<bool>(AppRoutes.addTransaction.path);
-          if (result == true) {
+          final result = await context.push<dynamic>(
+            AppRoutes.addTransaction.path,
+          );
+          if (result != null && mounted) {
             _loadDashboardData();
           }
         },
@@ -100,120 +119,97 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onRefresh: _loadDashboardData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: AppDimens.dimen16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimens.dimen16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                const SizedBox(height: AppDimens.dimen12),
+                    const SizedBox(height: AppDimens.dimen12),
 
-                // Top Header: Greeting, User Name, Notification, Avatar
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _greeting,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          userName,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
+                    // Top Header: Greeting, User Name, Notification, Avatar
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        IconButton(
-                          icon: Stack(
-                            children: [
-                              const Icon(
-                                Icons.notifications_none_rounded,
-                                color: AppColors.textPrimary,
-                                size: 26,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _greeting,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
                               ),
-                              Positioned(
-                                right: 2,
-                                top: 2,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                  ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              userName,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: AppColors.primaryLight,
+                              child: Text(
+                                userInitials,
+                                style: const TextStyle(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
                                 ),
                               ),
-                            ],
-                          ),
-                          onPressed: () {},
-                        ),
-                        const SizedBox(width: 4),
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: AppColors.primaryLight,
-                          child: Text(
-                            userInitials,
-                            style: const TextStyle(
-                              color: AppColors.primaryDark,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: AppDimens.dimen16),
+
+                    // Month Selector Dropdown
+                    _buildMonthSelector(context),
+
+                    const SizedBox(height: AppDimens.dimen16),
+
+                    // Total Balance Card
+                    _buildTotalBalanceCard(theme),
+
+                    const SizedBox(height: AppDimens.dimen12),
+
+                    // Income & Expenses Summary Row
+                    _buildIncomeExpenseRow(theme),
+
+                    const SizedBox(height: AppDimens.dimen12),
+
+                    // Savings Card
+                    _buildSavingsCard(theme),
+
+                    const SizedBox(height: AppDimens.dimen24),
+
+                    // Expense by Category Section
+                    _buildExpenseByCategory(theme),
+
+                    const SizedBox(height: AppDimens.dimen24),
+
+                    // Recent Transactions
+                    _buildRecentTransactions(theme),
+
+                    const SizedBox(height: AppDimens.dimen40),
                   ],
                 ),
-
-                const SizedBox(height: AppDimens.dimen16),
-
-                // Month Selector Dropdown
-                _buildMonthSelector(context),
-
-                const SizedBox(height: AppDimens.dimen16),
-
-                // Total Balance Card
-                _buildTotalBalanceCard(theme),
-
-                const SizedBox(height: AppDimens.dimen12),
-
-                // Income & Expenses Summary Row
-                _buildIncomeExpenseRow(theme),
-
-                const SizedBox(height: AppDimens.dimen12),
-
-                // Savings Card
-                _buildSavingsCard(theme),
-
-                const SizedBox(height: AppDimens.dimen24),
-
-                // Expense by Category Section
-                _buildExpenseByCategory(theme),
-
-                const SizedBox(height: AppDimens.dimen24),
-
-                // Recent Transactions
-                _buildRecentTransactions(theme),
-
-                const SizedBox(height: AppDimens.dimen40),
-              ],
+              ),
             ),
           ),
-        ),
+          if (_isLoading) const AppLoader(loadingText: 'Loading dashboard...'),
+        ],
       ),
-      if (_isLoading) const AppLoader(loadingText: 'Loading dashboard...'),
-    ],
-  ),
-);
-}
+    );
+  }
 
   Widget _buildMonthSelector(BuildContext context) {
     final monthLabel = DateFormat('MMMM yyyy').format(_selectedDate);
@@ -321,9 +317,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: AppDimens.dimen8),
           Text(
-            _isBalanceVisible
-                ? _summary.formattedBalance()
-                : '••••••••',
+            _isBalanceVisible ? _summary.formattedBalance() : '••••••••',
             style: theme.textTheme.headlineMedium?.copyWith(
               color: AppColors.white,
               fontWeight: FontWeight.w700,
@@ -505,6 +499,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildExpenseByCategory(ThemeData theme) {
     final breakdown = _summary.categoryBreakdown;
+    final hasExpenses = breakdown.isNotEmpty && _summary.totalExpense > 0;
 
     return Container(
       width: double.infinity,
@@ -517,15 +512,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Expense by Category",
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Expense by Category",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (hasExpenses)
+                Text(
+                  _summary.formattedExpense(),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.expense,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: AppDimens.dimen16),
-          if (breakdown.isEmpty)
+          if (!hasExpenses)
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
@@ -537,53 +545,213 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             )
-          else
-            Column(
-              children: breakdown.map((item) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: item.colorValue,
-                          shape: BoxShape.circle,
+          else ...[
+            // Pie Chart
+            Center(
+              child: SizedBox(
+                height: 190,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    PieChart(
+                      PieChartData(
+                        pieTouchData: PieTouchData(
+                          touchCallback:
+                              (FlTouchEvent event, pieTouchResponse) {
+                                setState(() {
+                                  if (!event.isInterestedForInteractions ||
+                                      pieTouchResponse == null ||
+                                      pieTouchResponse.touchedSection == null) {
+                                    _touchedPieIndex = -1;
+                                    return;
+                                  }
+                                  _touchedPieIndex = pieTouchResponse
+                                      .touchedSection!
+                                      .touchedSectionIndex;
+                                });
+                              },
                         ),
+                        borderData: FlBorderData(show: false),
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 46,
+                        startDegreeOffset: -90,
+                        sections: _buildPieChartSections(breakdown),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          item.categoryName,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w500,
+                    ),
+                    _buildPieCenterInfo(theme, breakdown),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppDimens.dimen16),
+            // Category breakdown items
+            Column(
+              children: breakdown.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                final isSelected = _touchedPieIndex == index;
+
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      _touchedPieIndex = _touchedPieIndex == index ? -1 : index;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? item.colorValue.withValues(alpha: 0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: item.colorValue,
+                            shape: BoxShape.circle,
                           ),
                         ),
-                      ),
-                      Text(
-                        item.formattedAmount(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item.categoryName,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        item.formattedPercentage,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
+                        Text(
+                          item.formattedAmount(),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Text(
+                          item.formattedPercentage,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: isSelected
+                                ? item.colorValue
+                                : AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }).toList(),
             ),
+          ],
         ],
       ),
     );
+  }
+
+  Widget _buildPieCenterInfo(
+    ThemeData theme,
+    List<CategorySpending> breakdown,
+  ) {
+    if (_touchedPieIndex >= 0 && _touchedPieIndex < breakdown.length) {
+      final touchedItem = breakdown[_touchedPieIndex];
+      return Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              touchedItem.categoryName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: touchedItem.colorValue,
+                fontWeight: FontWeight.w700,
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              touchedItem.formattedAmount(),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+                fontSize: 13,
+              ),
+            ),
+            Text(
+              touchedItem.formattedPercentage,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          "Total",
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: AppColors.textSecondary,
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          _summary.formattedExpense(),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<PieChartSectionData> _buildPieChartSections(
+    List<CategorySpending> breakdown,
+  ) {
+    return breakdown.asMap().entries.map((entry) {
+      final index = entry.key;
+      final item = entry.value;
+      final isTouched = index == _touchedPieIndex;
+      final radius = isTouched ? 34.0 : 26.0;
+      final showTitle = isTouched || item.percentage >= 8.0;
+
+      return PieChartSectionData(
+        color: item.colorValue,
+        value: item.amount > 0 ? item.amount : 0.001,
+        title: showTitle ? '${item.percentage.toStringAsFixed(0)}%' : '',
+        radius: radius,
+        titleStyle: TextStyle(
+          fontSize: isTouched ? 12.0 : 10.0,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          shadows: const [Shadow(color: Colors.black38, blurRadius: 2)],
+        ),
+        titlePositionPercentageOffset: 0.55,
+      );
+    }).toList();
   }
 
   Widget _buildRecentTransactions(ThemeData theme) {
@@ -600,8 +768,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             TextButton(
-              onPressed: () {
-                context.push(AppRoutes.transaction.path);
+              onPressed: () async {
+                await context.push(AppRoutes.transaction.path);
+                if (mounted) {
+                  _loadDashboardData();
+                }
               },
               child: Text(
                 "View All",
@@ -640,58 +811,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildTransactionCard(TransactionItem tx, ThemeData theme) {
     final isIncome = tx.type.isIncome;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(AppDimens.dimen12),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppDimens.dimen16),
-        border: Border.all(color: AppColors.borderColor),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: tx.categoryColorValue.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+    return InkWell(
+      onTap: () async {
+        final result = await context.push<dynamic>(
+          AppRoutes.transactionDetails.path,
+          extra: tx,
+        );
+        if (result != null && mounted) {
+          _loadDashboardData();
+        }
+      },
+      borderRadius: BorderRadius.circular(AppDimens.dimen16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(AppDimens.dimen12),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(AppDimens.dimen16),
+          border: Border.all(color: AppColors.borderColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: tx.categoryColorValue.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                tx.categoryIconData,
+                color: tx.categoryColorValue,
+                size: 22,
+              ),
             ),
-            child: Icon(
-              tx.categoryIconData,
-              color: tx.categoryColorValue,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tx.displayTitle,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tx.displayTitle,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${isIncome ? "Income" : "Expense"} • ${tx.formattedDate}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.textHint,
+                  const SizedBox(height: 2),
+                  Text(
+                    '${isIncome ? "Income" : "Expense"} • ${tx.formattedDate}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textHint,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Text(
-            tx.formattedAmount(),
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: isIncome ? AppColors.income : AppColors.expense,
-              fontWeight: FontWeight.w700,
+            Text(
+              tx.formattedAmount(),
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: isIncome ? AppColors.income : AppColors.expense,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -708,15 +891,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(Icons.home_rounded, "Home", true, () {}),
-            _buildNavItem(Icons.receipt_long_rounded, "Transactions", false, () {
-              context.push(AppRoutes.transaction.path);
-            }),
+            _buildNavItem(
+              Icons.receipt_long_rounded,
+              "Transactions",
+              false,
+              () async {
+                await context.push(AppRoutes.transaction.path);
+                if (mounted) {
+                  _loadDashboardData();
+                }
+              },
+            ),
             const SizedBox(width: 48), // Spacer for FAB
-            _buildNavItem(Icons.bar_chart_rounded, "Reports", false, () {
-              context.push(AppRoutes.report.path);
+            _buildNavItem(Icons.bar_chart_rounded, "Reports", false, () async {
+              await context.push(AppRoutes.report.path);
+              if (mounted) {
+                _loadDashboardData();
+              }
             }),
-            _buildNavItem(Icons.settings_rounded, "Settings", false, () {
-              context.push(AppRoutes.settings.path);
+            _buildNavItem(Icons.settings_rounded, "Settings", false, () async {
+              await context.push(AppRoutes.settings.path);
+              if (mounted) {
+                _loadDashboardData();
+              }
             }),
           ],
         ),

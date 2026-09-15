@@ -29,23 +29,31 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   // Filters
   TransactionType? _selectedType; // null = All, income, expense
   DateTime? _selectedMonth = DateTime.now(); // null = All Time
+  DateTime? _selectedDate; // null = not filtering by a specific date
   CategoryModel? _selectedCategoryFilter;
   String _sortOrder = 'newest'; // newest, oldest, highest, lowest
 
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounceTimer;
+  StreamSubscription<void>? _transactionSubscription;
 
   @override
   void initState() {
     super.initState();
     _dbService = serviceLocator<DatabaseService>();
     _loadInitialData();
+    _transactionSubscription = _dbService.onTransactionChanged.listen((_) {
+      if (mounted) {
+        _loadTransactions();
+      }
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _debounceTimer?.cancel();
+    _transactionSubscription?.cancel();
     super.dispose();
   }
 
@@ -66,8 +74,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       final list = await _dbService.getTransactions(
         type: _selectedType,
         searchQuery: query.isNotEmpty ? query : null,
-        month: _selectedMonth?.month,
-        year: _selectedMonth?.year,
+        date: _selectedDate,
+        month: _selectedDate == null ? _selectedMonth?.month : null,
+        year: _selectedDate == null ? _selectedMonth?.year : null,
         categoryId: _selectedCategoryFilter?.id,
       );
 
@@ -109,20 +118,229 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     _loadTransactions();
   }
 
+  void _onDateSelected(DateTime date) {
+    setState(() {
+      _selectedDate = DateTime(date.year, date.month, date.day);
+      _selectedMonth = DateTime(date.year, date.month);
+    });
+    _loadTransactions();
+  }
+
+  void _clearDateFilter() {
+    setState(() {
+      _selectedDate = null;
+    });
+    _loadTransactions();
+  }
+
+  Future<void> _selectSpecificDate() async {
+    final now = DateTime.now();
+    final initial = _selectedDate ?? _selectedMonth ?? now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: AppColors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      _onDateSelected(picked);
+    }
+  }
+
+  Future<void> _showDateFilterSheet() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.borderColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Filter by Date',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (_selectedDate != null)
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          _clearDateFilter();
+                        },
+                        child: const Text(
+                          'Clear Date',
+                          style: TextStyle(
+                            color: AppColors.expense,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.today_rounded, color: AppColors.primary),
+                  ),
+                  title: const Text(
+                    'Today',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  subtitle: Text(
+                    DateFormat('dd MMM yyyy').format(today),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textHint),
+                  ),
+                  trailing: _selectedDate != null &&
+                          _selectedDate!.year == today.year &&
+                          _selectedDate!.month == today.month &&
+                          _selectedDate!.day == today.day
+                      ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                      : null,
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _onDateSelected(today);
+                  },
+                ),
+                const Divider(height: 1, color: AppColors.borderColor),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.history_rounded, color: AppColors.primary),
+                  ),
+                  title: const Text(
+                    'Yesterday',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  subtitle: Text(
+                    DateFormat('dd MMM yyyy').format(yesterday),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textHint),
+                  ),
+                  trailing: _selectedDate != null &&
+                          _selectedDate!.year == yesterday.year &&
+                          _selectedDate!.month == yesterday.month &&
+                          _selectedDate!.day == yesterday.day
+                      ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                      : null,
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _onDateSelected(yesterday);
+                  },
+                ),
+                const Divider(height: 1, color: AppColors.borderColor),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
+                  ),
+                  title: const Text(
+                    'Pick a Date from Calendar',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  subtitle: Text(
+                    _selectedDate != null
+                        ? 'Selected: ${DateFormat('dd MMM yyyy').format(_selectedDate!)}'
+                        : 'Choose any specific day',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textHint),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
+                  onTap: () async {
+                    Navigator.of(ctx).pop();
+                    await _selectSpecificDate();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _showMonthPicker() async {
     final result = await showMonthYearPickerSheet(
       context: context,
       initialDate: _selectedMonth ?? DateTime.now(),
       allowAllMonths: true,
-      isAllMonths: _selectedMonth == null,
+      isAllMonths: _selectedMonth == null && _selectedDate == null,
     );
 
     if (result != null) {
-      if (result.isAllMonths) {
-        setState(() => _selectedMonth = null);
-      } else if (result.date != null) {
-        setState(() => _selectedMonth = result.date);
-      }
+      setState(() {
+        _selectedDate = null;
+        if (result.isAllMonths) {
+          _selectedMonth = null;
+        } else if (result.date != null) {
+          _selectedMonth = result.date;
+        }
+      });
       _loadTransactions();
     }
   }
@@ -145,99 +363,78 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       builder: (ctx) {
         String tempSort = _sortOrder;
         CategoryModel? tempCategory = _selectedCategoryFilter;
+        DateTime? tempDate = _selectedDate;
+
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final yesterday = today.subtract(const Duration(days: 1));
 
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            final isToday = tempDate != null &&
+                tempDate!.year == today.year &&
+                tempDate!.month == today.month &&
+                tempDate!.day == today.day;
+            final isYesterday = tempDate != null &&
+                tempDate!.year == yesterday.year &&
+                tempDate!.month == yesterday.month &&
+                tempDate!.day == yesterday.day;
+            final isCustom = tempDate != null && !isToday && !isYesterday;
+            final customDateLabel = isCustom
+                ? DateFormat('dd MMM yyyy').format(tempDate!)
+                : 'Custom Date...';
+
             return SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.borderColor,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Filter & Sort',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.borderColor,
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            setSheetState(() {
-                              tempSort = 'newest';
-                              tempCategory = null;
-                            });
-                          },
-                          child: const Text(
-                            'Reset',
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Filter & Sort',
                             style: TextStyle(
-                              color: AppColors.expense,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Sort by',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                          TextButton(
+                            onPressed: () {
+                              setSheetState(() {
+                                tempSort = 'newest';
+                                tempCategory = null;
+                                tempDate = null;
+                              });
+                            },
+                            child: const Text(
+                              'Reset',
+                              style: TextStyle(
+                                color: AppColors.expense,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _buildSortChip(
-                          'Newest First',
-                          'newest',
-                          tempSort,
-                          (val) => setSheetState(() => tempSort = val),
-                        ),
-                        _buildSortChip(
-                          'Oldest First',
-                          'oldest',
-                          tempSort,
-                          (val) => setSheetState(() => tempSort = val),
-                        ),
-                        _buildSortChip(
-                          'Highest Amount',
-                          'highest',
-                          tempSort,
-                          (val) => setSheetState(() => tempSort = val),
-                        ),
-                        _buildSortChip(
-                          'Lowest Amount',
-                          'lowest',
-                          tempSort,
-                          (val) => setSheetState(() => tempSort = val),
-                        ),
-                      ],
-                    ),
-                    if (categories.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       const Text(
-                        'Filter by Category',
+                        'Filter by Date',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -245,34 +442,165 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      SizedBox(
-                        height: 38,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: categories.length + 1,
-                          separatorBuilder: (_, _) => const SizedBox(width: 8),
-                          itemBuilder: (context, index) {
-                            if (index == 0) {
-                              final isAll = tempCategory == null;
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildFilterChip(
+                            'All / Month',
+                            tempDate == null,
+                            () => setSheetState(() => tempDate = null),
+                          ),
+                          _buildFilterChip(
+                            'Today',
+                            isToday,
+                            () => setSheetState(() => tempDate = today),
+                          ),
+                          _buildFilterChip(
+                            'Yesterday',
+                            isYesterday,
+                            () => setSheetState(() => tempDate = yesterday),
+                          ),
+                          _buildFilterChip(
+                            customDateLabel,
+                            isCustom,
+                            () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: tempDate ?? now,
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime(2100),
+                                builder: (context, child) {
+                                  return Theme(
+                                    data: Theme.of(context).copyWith(
+                                      colorScheme: const ColorScheme.light(
+                                        primary: AppColors.primary,
+                                        onPrimary: AppColors.white,
+                                        onSurface: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    child: child!,
+                                  );
+                                },
+                              );
+                              if (picked != null) {
+                                setSheetState(() => tempDate = picked);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Sort by',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildSortChip(
+                            'Newest First',
+                            'newest',
+                            tempSort,
+                            (val) => setSheetState(() => tempSort = val),
+                          ),
+                          _buildSortChip(
+                            'Oldest First',
+                            'oldest',
+                            tempSort,
+                            (val) => setSheetState(() => tempSort = val),
+                          ),
+                          _buildSortChip(
+                            'Highest Amount',
+                            'highest',
+                            tempSort,
+                            (val) => setSheetState(() => tempSort = val),
+                          ),
+                          _buildSortChip(
+                            'Lowest Amount',
+                            'lowest',
+                            tempSort,
+                            (val) => setSheetState(() => tempSort = val),
+                          ),
+                        ],
+                      ),
+                      if (categories.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Filter by Category',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 38,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: categories.length + 1,
+                            separatorBuilder: (_, _) => const SizedBox(width: 8),
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                final isAll = tempCategory == null;
+                                return ChoiceChip(
+                                  label: Text(
+                                    'All',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isAll
+                                          ? AppColors.white
+                                          : AppColors.textPrimary,
+                                      fontWeight: isAll
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                    ),
+                                  ),
+                                  selected: isAll,
+                                  selectedColor: AppColors.primary,
+                                  backgroundColor: AppColors.white,
+                                  surfaceTintColor: Colors.transparent,
+                                  side: BorderSide(
+                                    color: isAll
+                                        ? AppColors.primary
+                                        : AppColors.borderColor,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  onSelected: (_) {
+                                    setSheetState(() => tempCategory = null);
+                                  },
+                                );
+                              }
+                              final cat = categories[index - 1];
+                              final isSel = tempCategory?.id == cat.id;
                               return ChoiceChip(
                                 label: Text(
-                                  'All',
+                                  cat.name,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isAll
+                                    color: isSel
                                         ? AppColors.white
                                         : AppColors.textPrimary,
-                                    fontWeight: isAll
+                                    fontWeight: isSel
                                         ? FontWeight.w700
                                         : FontWeight.w500,
                                   ),
                                 ),
-                                selected: isAll,
+                                selected: isSel,
                                 selectedColor: AppColors.primary,
                                 backgroundColor: AppColors.white,
                                 surfaceTintColor: Colors.transparent,
                                 side: BorderSide(
-                                  color: isAll
+                                  color: isSel
                                       ? AppColors.primary
                                       : AppColors.borderColor,
                                 ),
@@ -280,82 +608,86 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 onSelected: (_) {
-                                  setSheetState(() => tempCategory = null);
+                                  setSheetState(() => tempCategory = cat);
                                 },
                               );
-                            }
-                            final cat = categories[index - 1];
-                            final isSel = tempCategory?.id == cat.id;
-                            return ChoiceChip(
-                              label: Text(
-                                cat.name,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isSel
-                                      ? AppColors.white
-                                      : AppColors.textPrimary,
-                                  fontWeight: isSel
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                ),
-                              ),
-                              selected: isSel,
-                              selectedColor: AppColors.primary,
-                              backgroundColor: AppColors.white,
-                              surfaceTintColor: Colors.transparent,
-                              side: BorderSide(
-                                color: isSel
-                                    ? AppColors.primary
-                                    : AppColors.borderColor,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              onSelected: (_) {
-                                setSheetState(() => tempCategory = cat);
-                              },
-                            );
+                            },
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _sortOrder = tempSort;
+                              _selectedCategoryFilter = tempCategory;
+                              _selectedDate = tempDate;
+                              if (tempDate != null) {
+                                _selectedMonth = DateTime(
+                                  tempDate!.year,
+                                  tempDate!.month,
+                                );
+                              }
+                            });
+                            Navigator.of(ctx).pop();
+                            _loadTransactions();
                           },
+                          child: const Text(
+                            'Apply Filters',
+                            style: TextStyle(
+                              color: AppColors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ),
                     ],
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _sortOrder = tempSort;
-                            _selectedCategoryFilter = tempCategory;
-                          });
-                          Navigator.of(ctx).pop();
-                          _loadTransactions();
-                        },
-                        child: const Text(
-                          'Apply Filters',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildFilterChip(
+    String label,
+    bool isSelected,
+    VoidCallback onSelected,
+  ) {
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: isSelected ? AppColors.white : AppColors.textPrimary,
+          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+        ),
+      ),
+      selected: isSelected,
+      selectedColor: AppColors.primary,
+      backgroundColor: AppColors.white,
+      surfaceTintColor: Colors.transparent,
+      side: BorderSide(
+        color: isSelected ? AppColors.primary : AppColors.borderColor,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      onSelected: (_) => onSelected(),
     );
   }
 
@@ -469,17 +801,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
               const SizedBox(height: AppDimens.dimen12),
 
-              // 4. Month Selector & Filter Funnel Row
+              // 4. Month Selector, Date Filter & Filter Funnel Row
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimens.dimen20,
                 ),
                 child: Row(
                   children: [
-                    // Month selector pill
+                    // Month or Selected Date selector pill
                     Expanded(
                       child: InkWell(
-                        onTap: _showMonthPicker,
+                        onTap: _selectedDate != null
+                            ? _showDateFilterSheet
+                            : _showMonthPicker,
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -487,35 +821,90 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.white,
+                            color: _selectedDate != null
+                                ? AppColors.primary.withValues(alpha: 0.08)
+                                : AppColors.white,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.borderColor),
+                            border: Border.all(
+                              color: _selectedDate != null
+                                  ? AppColors.primary
+                                  : AppColors.borderColor,
+                            ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(
-                                Icons.calendar_today_outlined,
+                              Icon(
+                                _selectedDate != null
+                                    ? Icons.event_available_rounded
+                                    : Icons.calendar_today_outlined,
                                 size: 16,
-                                color: AppColors.textPrimary,
+                                color: _selectedDate != null
+                                    ? AppColors.primary
+                                    : AppColors.textPrimary,
                               ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  monthText,
-                                  style: const TextStyle(
+                                  _selectedDate != null
+                                      ? DateFormat('dd MMM yyyy').format(_selectedDate!)
+                                      : monthText,
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
+                                    color: _selectedDate != null
+                                        ? AppColors.primary
+                                        : AppColors.textPrimary,
                                   ),
                                 ),
                               ),
-                              const Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 20,
-                                color: AppColors.textSecondary,
-                              ),
+                              if (_selectedDate != null)
+                                InkWell(
+                                  onTap: _clearDateFilter,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(2.0),
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      size: 18,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                )
+                              else
+                                const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 20,
+                                  color: AppColors.textSecondary,
+                                ),
                             ],
                           ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Dedicated Date Filter button
+                    InkWell(
+                      onTap: _showDateFilterSheet,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _selectedDate != null
+                              ? AppColors.primary
+                              : AppColors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _selectedDate != null
+                                ? AppColors.primary
+                                : AppColors.borderColor,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.event_outlined,
+                          size: 20,
+                          color: _selectedDate != null
+                              ? AppColors.white
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -531,7 +920,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _selectedCategoryFilter != null ||
-                                    _sortOrder != 'newest'
+                                    _sortOrder != 'newest' ||
+                                    _selectedDate != null
                                 ? AppColors.primary
                                 : AppColors.borderColor,
                           ),
@@ -540,7 +930,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           Icons.filter_alt_outlined,
                           size: 20,
                           color: _selectedCategoryFilter != null ||
-                                  _sortOrder != 'newest'
+                                  _sortOrder != 'newest' ||
+                                  _selectedDate != null
                               ? AppColors.primary
                               : AppColors.textPrimary,
                         ),
@@ -744,6 +1135,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _buildEmptyState() {
+    final dateFiltered = _selectedDate != null;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -757,30 +1149,55 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 color: Color(0xFFF1F4F9),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.receipt_long_rounded,
+              child: Icon(
+                dateFiltered
+                    ? Icons.event_busy_rounded
+                    : Icons.receipt_long_rounded,
                 size: 40,
                 color: AppColors.textHint,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'No Transactions Found',
-              style: TextStyle(
+            Text(
+              dateFiltered
+                  ? 'No Transactions on ${DateFormat('dd MMM yyyy').format(_selectedDate!)}'
+                  : 'No Transactions Found',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Try changing your filters, search term, or add a new transaction.',
+            Text(
+              dateFiltered
+                  ? 'There are no transactions recorded for this selected date.'
+                  : 'Try changing your filters, search term, or add a new transaction.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.textHint,
               ),
             ),
+            if (dateFiltered) ...[
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: _clearDateFilter,
+                icon: const Icon(
+                  Icons.clear_rounded,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+                label: const Text(
+                  'Clear Date Filter',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
