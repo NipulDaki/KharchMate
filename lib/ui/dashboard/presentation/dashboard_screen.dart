@@ -12,7 +12,6 @@ import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/database_service.dart';
-import 'package:kharch_mate/widgets/app_loader.dart';
 import 'package:kharch_mate/widgets/month_year_picker_sheet.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -28,7 +27,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   UserProfile? _userProfile;
   FinancialSummary _summary = FinancialSummary.empty();
   List<TransactionItem> _recentTransactions = [];
-  bool _isLoading = true;
   bool _isBalanceVisible = true;
   DateTime _selectedDate = DateTime.now();
   int _touchedPieIndex = -1;
@@ -52,8 +50,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadDashboardData() async {
-    setState(() => _isLoading = true);
-
     try {
       final user = await _dbService.getUserProfile();
       final summary = await _dbService.getMonthlySummary(
@@ -68,14 +64,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _summary = summary;
           _recentTransactions = recent;
           _touchedPieIndex = -1;
-          _isLoading = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    } catch (_) {}
   }
 
   String get _greeting {
@@ -205,7 +196,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-          if (_isLoading) const AppLoader(loadingText: 'Loading dashboard...'),
         ],
       ),
     );

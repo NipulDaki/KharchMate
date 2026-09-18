@@ -14,6 +14,9 @@ enum AppRoutes {
   settings,
   categories,
   addCategory,
+  privacyPolicy,
+  termsOfUse,
+  helpSupport,
 }
 
 extension AppRouteExtension on AppRoutes {
@@ -45,6 +48,12 @@ extension AppRouteExtension on AppRoutes {
         return '/categories';
       case AppRoutes.addCategory:
         return '/add-category';
+      case AppRoutes.privacyPolicy:
+        return '/privacy-policy';
+      case AppRoutes.termsOfUse:
+        return '/terms-of-use';
+      case AppRoutes.helpSupport:
+        return '/help-support';
     }
   }
 
@@ -76,6 +85,12 @@ extension AppRouteExtension on AppRoutes {
         return 'Categories';
       case AppRoutes.addCategory:
         return 'AddCategory';
+      case AppRoutes.privacyPolicy:
+        return 'PrivacyPolicy';
+      case AppRoutes.termsOfUse:
+        return 'TermsOfUse';
+      case AppRoutes.helpSupport:
+        return 'HelpSupport';
     }
   }
 }

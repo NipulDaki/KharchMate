@@ -6,7 +6,6 @@ import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/database_service.dart';
-import 'package:kharch_mate/widgets/app_loader.dart';
 import 'package:kharch_mate/widgets/app_text_button.dart';
 import 'package:kharch_mate/widgets/app_textformfield.dart';
 
@@ -210,8 +209,6 @@ class _UserNameScreenState extends State<UserNameScreen> {
               ),
             ),
           ),
-
-          if (_isLoading) const AppLoader(loadingText: "Setting up your wallet..."),
         ],
       ),
     );
