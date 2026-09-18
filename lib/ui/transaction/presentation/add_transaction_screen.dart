@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/enum/payment_mode.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
+import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/services/database_service.dart';
@@ -33,6 +36,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   DateTime _selectedDate = DateTime.now();
   PaymentMode? _selectedPaymentMode;
   String _currencySymbol = '₹';
+  StreamSubscription<UserProfile>? _userProfileSubscription;
 
   bool _isLoading = true;
   bool _isSaving = false;
@@ -56,12 +60,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
     }
     _loadInitialData();
+    _userProfileSubscription = _dbService.onUserProfileChanged.listen((profile) {
+      if (mounted && profile.currencySymbol.isNotEmpty) {
+        setState(() {
+          _currencySymbol = profile.currencySymbol;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
+    _userProfileSubscription?.cancel();
     super.dispose();
   }
 
@@ -69,7 +81,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     try {
       final user = await _dbService.getUserProfile();
       if (user != null && user.currencySymbol.isNotEmpty) {
-        _currencySymbol = user.currencySymbol;
+        if (mounted) {
+          setState(() {
+            _currencySymbol = user.currencySymbol;
+          });
+        } else {
+          _currencySymbol = user.currencySymbol;
+        }
       }
       await _dbService.ensurePredefinedCategories();
       await _loadCategoriesForType(_selectedType);

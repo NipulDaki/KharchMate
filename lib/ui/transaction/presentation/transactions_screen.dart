@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
+import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
@@ -34,6 +35,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounceTimer;
   StreamSubscription<void>? _transactionSubscription;
+  StreamSubscription<UserProfile>? _userProfileSubscription;
 
   @override
   void initState() {
@@ -45,6 +47,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         _loadTransactions();
       }
     });
+    _userProfileSubscription = _dbService.onUserProfileChanged.listen((profile) {
+      if (mounted && profile.currencySymbol.isNotEmpty) {
+        setState(() {
+          _currencySymbol = profile.currencySymbol;
+        });
+      }
+    });
   }
 
   @override
@@ -52,6 +61,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     _searchController.dispose();
     _debounceTimer?.cancel();
     _transactionSubscription?.cancel();
+    _userProfileSubscription?.cancel();
     super.dispose();
   }
 
@@ -59,7 +69,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     try {
       final user = await _dbService.getUserProfile();
       if (user != null && user.currencySymbol.isNotEmpty) {
-        _currencySymbol = user.currencySymbol;
+        if (mounted) {
+          setState(() {
+            _currencySymbol = user.currencySymbol;
+          });
+        } else {
+          _currencySymbol = user.currencySymbol;
+        }
       }
     } catch (_) {}
     await _loadTransactions();
@@ -1206,11 +1222,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(Icons.home_rounded, 'Home', false, () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              } else {
-                context.go(AppRoutes.dashboard.path);
-              }
+              context.go(AppRoutes.dashboard.path);
             }),
             _buildNavItem(
               Icons.receipt_long_rounded,
@@ -1220,10 +1232,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
             const SizedBox(width: 48), // Spacer for center FAB
             _buildNavItem(Icons.bar_chart_rounded, 'Reports', false, () {
-              context.push(AppRoutes.report.path);
+              context.go(AppRoutes.report.path);
             }),
             _buildNavItem(Icons.settings_rounded, 'Settings', false, () {
-              context.push(AppRoutes.settings.path);
+              context.go(AppRoutes.settings.path);
             }),
           ],
         ),

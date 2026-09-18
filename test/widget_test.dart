@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kharch_mate/database/app_database.dart';
 import 'package:kharch_mate/di/service_locator.dart';
@@ -6,9 +7,18 @@ import 'package:kharch_mate/ui/splash/presentation/splash_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/google_mobile_ads'),
+      (MethodCall methodCall) async {
+        return null;
+      },
+    );
   });
 
   setUp(() async {

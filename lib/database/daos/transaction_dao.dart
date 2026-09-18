@@ -99,7 +99,7 @@ class TransactionDao {
       LIMIT ?
     ''';
     final results = await _db.rawQuery(sql, [limit]);
-    return results.map(TransactionItem.fromMap).toList();
+    return results.map(TransactionItem.fromMap).take(limit).toList();
   }
 
   /// Retrieves transactions with filters (type, search, date, month, year, category).

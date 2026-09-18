@@ -95,6 +95,46 @@ class UserDao {
     }
   }
 
+  /// Updates the user's name and email in the local database.
+  Future<UserProfile> updateUserProfile({
+    required String name,
+    String? email,
+  }) async {
+    final existing = await getUserProfile();
+    final now = DateTime.now();
+    final cleanEmail =
+        (email != null && email.trim().isNotEmpty) ? email.trim() : null;
+
+    if (existing == null) {
+      return await saveUserProfile(
+        UserProfile(
+          name: name.trim(),
+          email: cleanEmail,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    } else {
+      final updated = UserProfile(
+        id: existing.id,
+        name: name.trim(),
+        email: cleanEmail,
+        currencyCode: existing.currencyCode,
+        currencySymbol: existing.currencySymbol,
+        isDarkMode: existing.isDarkMode,
+        createdAt: existing.createdAt,
+        updatedAt: now,
+      );
+      await _db.update(
+        DatabaseConstants.tableUsers,
+        updated.toMap(),
+        where: '${DatabaseConstants.colUserId} = ?',
+        whereArgs: [existing.id],
+      );
+      return updated;
+    }
+  }
+
   /// Updates dark mode setting.
   Future<void> updateDarkMode(bool isDarkMode) async {
     final existing = await getUserProfile();

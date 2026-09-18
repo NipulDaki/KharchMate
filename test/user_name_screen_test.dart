@@ -78,12 +78,12 @@ void main() {
 
     // Enter name
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'e.g. Nipul Daki'),
+      find.byType(TextFormField).first,
       'Nipul Daki',
     );
     // Enter invalid email
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'e.g. nipul@example.com'),
+      find.byType(TextFormField).last,
       'invalid-email',
     );
 

@@ -27,13 +27,25 @@ class DatabaseService {
 
   final StreamController<void> _transactionUpdateController =
       StreamController<void>.broadcast();
+  final StreamController<UserProfile> _userProfileUpdateController =
+      StreamController<UserProfile>.broadcast();
 
   /// Stream that emits an event whenever transactions change (insert, update, delete).
   Stream<void> get onTransactionChanged => _transactionUpdateController.stream;
 
+  /// Stream that emits an event whenever user profile changes (e.g. currency, name, etc.).
+  Stream<UserProfile> get onUserProfileChanged =>
+      _userProfileUpdateController.stream;
+
   void notifyTransactionChanged() {
     if (!_transactionUpdateController.isClosed) {
       _transactionUpdateController.add(null);
+    }
+  }
+
+  void notifyUserProfileChanged(UserProfile profile) {
+    if (!_userProfileUpdateController.isClosed) {
+      _userProfileUpdateController.add(profile);
     }
   }
 
@@ -54,6 +66,7 @@ class DatabaseService {
   /// Close database connection.
   Future<void> close() async {
     await _transactionUpdateController.close();
+    await _userProfileUpdateController.close();
     await _appDatabase.close();
   }
 
@@ -86,6 +99,7 @@ class DatabaseService {
       await txn.delete(DatabaseConstants.tableUsers);
     });
     notifyTransactionChanged();
+    notifyUserProfileChanged(UserProfile.empty());
   }
 
   // ==========================================
@@ -96,16 +110,39 @@ class DatabaseService {
 
   Future<bool> hasUser() => _userDao.hasUser();
 
-  Future<UserProfile> saveUserProfile(UserProfile profile) =>
-      _userDao.saveUserProfile(profile);
+  Future<UserProfile> saveUserProfile(UserProfile profile) async {
+    final saved = await _userDao.saveUserProfile(profile);
+    notifyUserProfileChanged(saved);
+    return saved;
+  }
 
-  Future<UserProfile> saveUserName(String name, {String? email}) =>
-      _userDao.saveUserName(name, email: email);
+  Future<UserProfile> saveUserName(String name, {String? email}) async {
+    final saved = await _userDao.saveUserName(name, email: email);
+    notifyUserProfileChanged(saved);
+    return saved;
+  }
 
-  Future<void> updateDarkMode(bool isDarkMode) =>
-      _userDao.updateDarkMode(isDarkMode);
+  Future<UserProfile> updateUserProfile({
+    required String name,
+    String? email,
+  }) async {
+    final saved = await _userDao.updateUserProfile(name: name, email: email);
+    notifyUserProfileChanged(saved);
+    return saved;
+  }
 
-  Future<void> deleteUser() => _userDao.deleteUser();
+  Future<void> updateDarkMode(bool isDarkMode) async {
+    await _userDao.updateDarkMode(isDarkMode);
+    final user = await _userDao.getUserProfile();
+    if (user != null) {
+      notifyUserProfileChanged(user);
+    }
+  }
+
+  Future<void> deleteUser() async {
+    await _userDao.deleteUser();
+    notifyUserProfileChanged(UserProfile.empty());
+  }
 
   // ==========================================
   // CATEGORY OPERATIONS
