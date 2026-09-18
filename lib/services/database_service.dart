@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:kharch_mate/database/app_database.dart';
+import 'package:kharch_mate/database/database_constants.dart';
 import 'package:kharch_mate/database/daos/budget_dao.dart';
 import 'package:kharch_mate/database/daos/category_dao.dart';
 import 'package:kharch_mate/database/daos/payment_method_dao.dart';
@@ -59,6 +60,32 @@ class DatabaseService {
   /// Resets database by rolling back all migrations and re-running them.
   Future<void> resetDatabase() async {
     await _appDatabase.resetDatabase();
+  }
+
+  /// Permanently deletes all user-added records from the database:
+  /// - Removes all transactions
+  /// - Removes all budgets
+  /// - Removes all custom categories (preserves default categories)
+  /// - Removes all custom payment methods (preserves default payment methods)
+  /// - Removes user profile
+  Future<void> deleteMyData() async {
+    final db = _appDatabase.db;
+    await db.transaction((txn) async {
+      await txn.delete(DatabaseConstants.tableTransactions);
+      await txn.delete(DatabaseConstants.tableBudgets);
+      await txn.delete(
+        DatabaseConstants.tableCategories,
+        where: '${DatabaseConstants.colCategoryIsDefault} = ?',
+        whereArgs: [0],
+      );
+      await txn.delete(
+        DatabaseConstants.tablePaymentMethods,
+        where: '${DatabaseConstants.colPaymentMethodIsDefault} = ?',
+        whereArgs: [0],
+      );
+      await txn.delete(DatabaseConstants.tableUsers);
+    });
+    notifyTransactionChanged();
   }
 
   // ==========================================

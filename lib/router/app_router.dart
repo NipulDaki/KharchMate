@@ -6,7 +6,10 @@ import 'package:kharch_mate/ui/categories/presentation/categories_screen.dart';
 import 'package:kharch_mate/ui/dashboard/presentation/dashboard_screen.dart';
 import 'package:kharch_mate/ui/onboarding/presentation/user_name_screen.dart';
 import 'package:kharch_mate/ui/onboarding/presentation/welcome_screen.dart';
+import 'package:kharch_mate/ui/settings/presentation/help_support_screen.dart';
+import 'package:kharch_mate/ui/settings/presentation/privacy_policy_screen.dart';
 import 'package:kharch_mate/ui/settings/presentation/settings_screen.dart';
+import 'package:kharch_mate/ui/settings/presentation/terms_screen.dart';
 import 'package:kharch_mate/ui/splash/presentation/splash_screen.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
 import 'package:kharch_mate/ui/transaction/presentation/add_transaction_screen.dart';
@@ -59,6 +62,21 @@ class AppRouter {
         name: AppRoutes.settings.name,
         path: AppRoutes.settings.path,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        name: AppRoutes.privacyPolicy.name,
+        path: AppRoutes.privacyPolicy.path,
+        builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
+      GoRoute(
+        name: AppRoutes.termsOfUse.name,
+        path: AppRoutes.termsOfUse.path,
+        builder: (context, state) => const TermsScreen(),
+      ),
+      GoRoute(
+        name: AppRoutes.helpSupport.name,
+        path: AppRoutes.helpSupport.path,
+        builder: (context, state) => const HelpSupportScreen(),
       ),
       GoRoute(
         name: AppRoutes.transaction.name,

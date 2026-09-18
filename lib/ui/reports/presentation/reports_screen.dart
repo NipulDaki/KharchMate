@@ -10,7 +10,6 @@ import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/database_service.dart';
-import 'package:kharch_mate/widgets/app_loader.dart';
 import 'package:kharch_mate/widgets/month_year_picker_sheet.dart';
 
 enum ReportTab { overview, category, trends }
@@ -27,7 +26,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
   StreamSubscription<void>? _transactionSubscription;
   FinancialSummary _summary = FinancialSummary.empty();
   List<MonthlyTrend> _trends = [];
-  bool _isLoading = true;
   DateTime _selectedDate = DateTime.now();
   ReportTab _selectedTab = ReportTab.overview;
   int _touchedPieIndex = -1;
@@ -54,8 +52,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Future<void> _loadReportData() async {
-    setState(() => _isLoading = true);
-
     try {
       final summary = await _dbService.getMonthlySummary(
         _selectedDate.month,
@@ -72,14 +68,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
           _summary = summary;
           _trends = trends;
           _touchedPieIndex = -1;
-          _isLoading = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    } catch (_) {}
   }
 
   @override
@@ -149,7 +140,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
             ),
           ),
-          if (_isLoading) const AppLoader(loadingText: 'Loading reports...'),
         ],
       ),
     );

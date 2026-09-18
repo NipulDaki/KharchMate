@@ -4,12 +4,16 @@ class AppLoader extends StatelessWidget {
   final String loadingText;
   final double size;
   final bool blockInteraction;
+  final double width;
+  final double? height;
 
   const AppLoader({
     super.key,
     this.loadingText = '',
     this.size = 20,
     this.blockInteraction = true,
+    this.width = 100,
+    this.height,
   });
 
   @override
@@ -18,8 +22,13 @@ class AppLoader extends StatelessWidget {
 
     final loaderContent = Center(
       child: Container(
-        constraints: const BoxConstraints(minWidth: 84, minHeight: 84),
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+        width: width,
+        constraints: BoxConstraints(
+          minWidth: width,
+          maxWidth: width,
+          minHeight: height ?? (loadingText.isNotEmpty ? 100 : width),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
           color: theme.primaryColor,
           borderRadius: BorderRadius.circular(16.0),
@@ -34,27 +43,29 @@ class AppLoader extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Center(
-              child: SizedBox(
-                height: size,
-                width: size,
-                child: const CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
+            SizedBox(
+              height: size,
+              width: size,
+              child: const CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ),
             if (loadingText.isNotEmpty) ...[
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
               Text(
                 loadingText,
                 textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: Colors.white,
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
+                  height: 1.2,
                 ),
               ),
             ],

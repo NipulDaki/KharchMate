@@ -18,6 +18,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late final DatabaseService _dbService;
   UserProfile? _userProfile;
+  // ignore: unused_field
   bool _isDarkMode = false;
 
   @override
@@ -39,6 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (_) {}
   }
 
+  // ignore: unused_element
   Future<void> _toggleDarkMode(bool value) async {
     setState(() => _isDarkMode = value);
     try {
@@ -204,6 +206,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showDeleteMyDataDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: AppColors.expense,
+              size: 24,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Delete My Data',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to delete all your data? This will permanently remove all your transactions, budgets, custom categories, and personal profile from this device. Default categories will be preserved.\n\nThis action cannot be undone.',
+          style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.expense,
+              foregroundColor: AppColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await _dbService.deleteMyData();
+              if (mounted) {
+                context.go(AppRoutes.welcome.path);
+              }
+            },
+            child: const Text('Delete Data'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ignore: unused_element
   void _showInfoDialog(String title, String message) {
     showDialog(
       context: context,
@@ -318,7 +379,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: AppColors.dividerColor,
                     ),
 
-                    // 3. Notifications & Reminders
+                    // 3. Notifications & Reminders (Commented out)
+                    /*
                     _buildSettingsTile(
                       icon: Icons.notifications_none_rounded,
                       title: 'Notifications & Reminders',
@@ -334,8 +396,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       indent: 64,
                       color: AppColors.dividerColor,
                     ),
+                    */
 
-                    // 4. Dark Mode Switch
+                    // 4. Dark Mode Switch (Commented out)
+                    /*
                     _buildSwitchTile(
                       icon: Icons.nightlight_round_outlined,
                       title: 'Dark Mode',
@@ -347,8 +411,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       indent: 64,
                       color: AppColors.dividerColor,
                     ),
+                    */
 
-                    // 5. Export Data
+                    // 5. Export Data (Commented out)
+                    /*
                     _buildSettingsTile(
                       icon: Icons.credit_card_outlined,
                       title: 'Export Data',
@@ -364,16 +430,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       indent: 64,
                       color: AppColors.dividerColor,
                     ),
+                    */
 
-                    // 6. Privacy & Security
+                    // 7. Privacy Policy
                     _buildSettingsTile(
                       icon: Icons.shield_outlined,
-                      title: 'Privacy & Security',
+                      title: 'Privacy Policy',
                       onTap: () {
-                        _showInfoDialog(
-                          'Privacy & Security',
-                          'KharchMate keeps all your financial records locally on your device with offline SQLite storage.',
-                        );
+                        context.push(AppRoutes.privacyPolicy.path);
+                      },
+                    ),
+                    const Divider(
+                      height: 1,
+                      indent: 64,
+                      color: AppColors.dividerColor,
+                    ),
+
+                    // 8. Terms of Use
+                    _buildSettingsTile(
+                      icon: Icons.description_outlined,
+                      title: 'Terms of Use',
+                      onTap: () {
+                        context.push(AppRoutes.termsOfUse.path);
                       },
                     ),
                     const Divider(
@@ -387,10 +465,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.help_outline_rounded,
                       title: 'Help & Support',
                       onTap: () {
-                        _showInfoDialog(
-                          'Help & Support',
-                          'Need help with KharchMate? Reach out to support@kharchmate.app for feedback and queries.',
-                        );
+                        context.push(AppRoutes.helpSupport.path);
                       },
                     ),
                     const Divider(
@@ -399,7 +474,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: AppColors.dividerColor,
                     ),
 
-                    // 8. Logout
+                    // 8. Delete My Data
+                    _buildSettingsTile(
+                      icon: Icons.delete_forever_rounded,
+                      iconColor: AppColors.expense,
+                      iconBackgroundColor: const Color(0xFFFDECEA),
+                      title: 'Delete My Data',
+                      titleColor: AppColors.expense,
+                      showChevron: false,
+                      onTap: _showDeleteMyDataDialog,
+                    ),
+                    const Divider(
+                      height: 1,
+                      indent: 64,
+                      color: AppColors.dividerColor,
+                    ),
+
+                    // 9. Logout
                     _buildSettingsTile(
                       icon: Icons.logout_rounded,
                       iconColor: AppColors.expense,
@@ -544,6 +635,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildSwitchTile({
     required IconData icon,
     required String title,

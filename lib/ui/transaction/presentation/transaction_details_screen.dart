@@ -6,7 +6,6 @@ import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/database_service.dart';
-import 'package:kharch_mate/widgets/app_loader.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   final TransactionItem? transaction;
@@ -177,14 +176,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(child: AppLoader(loadingText: 'Loading details...')),
-      );
-    }
-
     if (_transaction == null) {
+      if (_isLoading) {
+        return const Scaffold(
+          backgroundColor: AppColors.background,
+        );
+      }
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(

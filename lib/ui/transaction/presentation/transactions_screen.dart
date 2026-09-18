@@ -9,7 +9,6 @@ import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/database_service.dart';
-import 'package:kharch_mate/widgets/app_loader.dart';
 import 'package:kharch_mate/widgets/month_year_picker_sheet.dart';
 
 class TransactionsScreen extends StatefulWidget {
@@ -23,7 +22,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   late final DatabaseService _dbService;
 
   List<TransactionItem> _transactions = [];
-  bool _isLoading = true;
   String _currencySymbol = '₹';
 
   // Filters
@@ -68,7 +66,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Future<void> _loadTransactions() async {
-    setState(() => _isLoading = true);
     try {
       final query = _searchController.text.trim();
       final list = await _dbService.getTransactions(
@@ -95,14 +92,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       if (mounted) {
         setState(() {
           _transactions = list;
-          _isLoading = false;
         });
       }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    } catch (_) {}
   }
 
   void _onSearchChanged(String value) {
@@ -945,11 +937,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
               // 5. Transaction List View
               Expanded(
-                child: _isLoading
-                    ? const Center(child: AppLoader(loadingText: 'Loading...'))
-                    : _transactions.isEmpty
-                        ? _buildEmptyState()
-                        : ListView.separated(
+                child: _transactions.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.separated(
                             padding: const EdgeInsets.symmetric(
                               horizontal: AppDimens.dimen20,
                               vertical: AppDimens.dimen8,

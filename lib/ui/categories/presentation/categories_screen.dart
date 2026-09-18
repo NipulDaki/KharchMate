@@ -6,7 +6,6 @@ import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/database_service.dart';
-import 'package:kharch_mate/widgets/app_loader.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -18,7 +17,6 @@ class CategoriesScreen extends StatefulWidget {
 class _CategoriesScreenState extends State<CategoriesScreen> {
   late final DatabaseService _dbService;
   List<CategoryModel> _allCategories = [];
-  bool _isLoading = true;
   String _selectedTab = 'All'; // 'All' | 'Expense' | 'Income'
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -40,7 +38,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   }
 
   Future<void> _initAndLoadCategories() async {
-    setState(() => _isLoading = true);
     try {
       // Ensure predefined categories exist even if none were created yet
       await _dbService.ensurePredefinedCategories();
@@ -49,14 +46,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       if (mounted) {
         setState(() {
           _allCategories = categories;
-          _isLoading = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    } catch (_) {}
   }
 
   List<CategoryModel> get _filteredExpenseCategories {
@@ -191,9 +183,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         },
         child: const Icon(Icons.add, color: AppColors.white, size: 28),
       ),
-      body: _isLoading
-          ? const AppLoader(loadingText: 'Loading categories...')
-          : RefreshIndicator(
+      body: RefreshIndicator(
               color: AppColors.primary,
               onRefresh: _initAndLoadCategories,
               child: SingleChildScrollView(
