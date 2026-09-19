@@ -44,9 +44,6 @@ dependencies:
   google_mobile_ads: ^9.1.0
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -54,7 +51,6 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
-  sqflite_common_ffi: ^2.4.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -99,3 +95,6 @@ flutter_launcher_icons:
   image_path: "assets/images/AppIcons/appstore.png"
   min_sdk_android: 21
   remove_alpha_ios: true
+  adaptive_icon_background: "assets/images/AppIcons/android/adaptive-background.png"
+  adaptive_icon_foreground: "assets/images/AppIcons/android/adaptive-foreground.png"
+  adaptive_icon_foreground_inset: 0
