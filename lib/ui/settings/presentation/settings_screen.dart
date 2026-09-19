@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
+import 'package:kharch_mate/services/ad_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -17,15 +20,46 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late final DatabaseService _dbService;
+  AdService? _adService;
   UserProfile? _userProfile;
   // ignore: unused_field
   bool _isDarkMode = false;
+  StreamSubscription<UserProfile>? _userProfileSubscription;
+  StreamSubscription<bool>? _adFreeSubscription;
 
   @override
   void initState() {
     super.initState();
     _dbService = serviceLocator<DatabaseService>();
     _loadUserProfile();
+    _userProfileSubscription = _dbService.onUserProfileChanged.listen((
+      profile,
+    ) {
+      if (mounted) {
+        setState(() {
+          _userProfile = profile;
+          _isDarkMode = profile.isDarkMode;
+        });
+      }
+    });
+
+    if (serviceLocator.isRegistered<AdService>()) {
+      _adService = serviceLocator<AdService>();
+      _adFreeSubscription = _adService!.onAdFreeChanged.listen((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+      // Preload rewarded ad so it's ready when user wants to watch
+      _adService!.loadRewardedAd();
+    }
+  }
+
+  @override
+  void dispose() {
+    _userProfileSubscription?.cancel();
+    _adFreeSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadUserProfile() async {
@@ -137,13 +171,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             : null,
                         onTap: () async {
                           Navigator.of(context).pop();
-                          if (_userProfile != null) {
-                            final updated = _userProfile!.copyWith(
-                              currencyCode: item['code'],
-                              currencySymbol: item['symbol'],
-                            );
-                            await _dbService.saveUserProfile(updated);
-                            setState(() => _userProfile = updated);
+                          final current =
+                              _userProfile ??
+                              await _dbService.getUserProfile() ??
+                              UserProfile.empty();
+                          final updated = current.copyWith(
+                            currencyCode: item['code'],
+                            currencySymbol: item['symbol'],
+                          );
+                          final saved = await _dbService.saveUserProfile(
+                            updated,
+                          );
+                          if (mounted) {
+                            setState(() => _userProfile = saved);
                           }
                         },
                       );
@@ -343,6 +383,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               const SizedBox(height: AppDimens.dimen16),
 
+              // 3-Day Ad-Free Pass Card
+              _buildAdFreeCard(),
+
+              const SizedBox(height: AppDimens.dimen16),
+
               // Settings Options Group Card
               Container(
                 decoration: BoxDecoration(
@@ -513,56 +558,282 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildUserProfileCard(String name, String email) {
+    return Material(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: () {
+          context.push(AppRoutes.userProfile.path);
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderColor),
+          ),
+          child: Row(
+            children: [
+              // Blue circle avatar with user silhouette
+              Container(
+                width: 52,
+                height: 52,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E88E5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.person,
+                  color: AppColors.white,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      email,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textPrimary,
+                size: 22,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdFreeCard() {
+    final isAdFree = _adService?.isAdFree ?? false;
+    final remainingText = _adService?.remainingAdFreeText ?? '';
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(
+          color: isAdFree
+              ? AppColors.income.withValues(alpha: 0.35)
+              : AppColors.borderColor,
+        ),
       ),
-      child: Row(
-        children: [
-          // Blue circle avatar with user silhouette
-          Container(
-            width: 52,
-            height: 52,
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E88E5),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.person, color: AppColors.white, size: 32),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: _showWatchRewardedAdDialog,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isAdFree
+                        ? AppColors.incomeLight
+                        : AppColors.primaryBackground,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isAdFree
+                        ? Icons.verified_rounded
+                        : Icons.card_giftcard_rounded,
+                    color: isAdFree ? AppColors.income : AppColors.primary,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  email,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            isAdFree
+                                ? 'Ad-Free Pass Active'
+                                : 'Go Ad-Free for 3 Days',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isAdFree ? '✨' : '🎁',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isAdFree
+                            ? '$remainingText • Tap to extend +3 days'
+                            : 'Watch a short video to remove banner ads',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: isAdFree
+                              ? AppColors.income
+                              : AppColors.textSecondary,
+                          fontWeight:
+                              isAdFree ? FontWeight.w600 : FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isAdFree ? AppColors.incomeLight : AppColors.primary,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    isAdFree ? 'Active' : 'Watch',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: isAdFree ? AppColors.income : AppColors.white,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: AppColors.textPrimary,
-            size: 22,
+        ),
+      ),
+    );
+  }
+
+  void _showWatchRewardedAdDialog() {
+    final isAdFree = _adService?.isAdFree ?? false;
+    final remainingText = _adService?.remainingAdFreeText ?? '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Text(isAdFree ? '✨ ' : '🎁 ', style: const TextStyle(fontSize: 22)),
+            Expanded(
+              child: Text(
+                isAdFree ? 'Extend Ad-Free Pass' : 'Unlock 3-Day Ad-Free Pass',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          isAdFree
+              ? 'You currently have an active ad-free pass ($remainingText).\n\nWatching another short sponsor video will add +3 full days (72 hours) to your pass!'
+              : 'Watch a short sponsor video to completely remove all banner ads across KharchMate for the next 3 days (72 hours).',
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            height: 1.45,
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textHint),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _playRewardedAd();
+            },
+            child: const Text('Watch Video'),
           ),
         ],
       ),
+    );
+  }
+
+  void _playRewardedAd() {
+    if (_adService == null) return;
+
+    if (!_adService!.isRewardedAdReady) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Video ad is preparing. Please try again in a few moments.',
+          ),
+          backgroundColor: AppColors.primary,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      _adService!.loadRewardedAd();
+      return;
+    }
+
+    _adService!.showRewardedAd(
+      onUserEarnedReward: () {
+        if (mounted) {
+          setState(() {});
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '🎉 Congratulations! 3 Days of Ad-Free experience activated!',
+              ),
+              backgroundColor: AppColors.income,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      },
+      onFailedToShow: (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not play video: ${error.message}'),
+              backgroundColor: AppColors.expense,
+            ),
+          );
+        }
+      },
     );
   }
 
@@ -695,12 +966,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               "Transactions",
               false,
               () {
-                context.push(AppRoutes.transaction.path);
+                context.go(AppRoutes.transaction.path);
               },
             ),
             const SizedBox(width: 48), // FAB center space
             _buildNavItem(Icons.bar_chart_rounded, "Reports", false, () {
-              context.push(AppRoutes.report.path);
+              context.go(AppRoutes.report.path);
             }),
             _buildNavItem(Icons.settings_rounded, "Settings", true, () {}),
           ],

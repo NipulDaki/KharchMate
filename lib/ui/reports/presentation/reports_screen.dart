@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/models/financial_summary.dart';
+import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
@@ -24,6 +25,8 @@ class ReportsScreen extends StatefulWidget {
 class _ReportsScreenState extends State<ReportsScreen> {
   late final DatabaseService _dbService;
   StreamSubscription<void>? _transactionSubscription;
+  StreamSubscription<UserProfile>? _userProfileSubscription;
+  String _currencySymbol = '₹';
   FinancialSummary _summary = FinancialSummary.empty();
   List<MonthlyTrend> _trends = [];
   DateTime _selectedDate = DateTime.now();
@@ -43,16 +46,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
         _loadReportData();
       }
     });
+    _userProfileSubscription = _dbService.onUserProfileChanged.listen((profile) {
+      if (mounted && profile.currencySymbol.isNotEmpty) {
+        setState(() {
+          _currencySymbol = profile.currencySymbol;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _transactionSubscription?.cancel();
+    _userProfileSubscription?.cancel();
     super.dispose();
   }
 
   Future<void> _loadReportData() async {
     try {
+      final user = await _dbService.getUserProfile();
       final summary = await _dbService.getMonthlySummary(
         _selectedDate.month,
         _selectedDate.year,
@@ -65,6 +77,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
       if (mounted) {
         setState(() {
+          if (user != null && user.currencySymbol.isNotEmpty) {
+            _currencySymbol = user.currencySymbol;
+          }
           _summary = summary;
           _trends = trends;
           _touchedPieIndex = -1;
@@ -329,7 +344,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          _summary.formattedIncome(),
+                          _summary.formattedIncome(symbol: _currencySymbol),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -385,7 +400,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          _summary.formattedExpense(),
+                          _summary.formattedExpense(symbol: _currencySymbol),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -446,7 +461,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                _summary.formattedSavings(),
+                _summary.formattedSavings(symbol: _currencySymbol),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -666,7 +681,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               final type = isIncome ? 'Income' : 'Expense';
               final amount = NumberFormat('#,##,###').format(rod.toY);
               return BarTooltipItem(
-                '$type: ₹$amount',
+                '$type: $_currencySymbol$amount',
                 const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -850,7 +865,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
               if (breakdown.isNotEmpty)
                 Text(
-                  _summary.formattedExpense(),
+                  _summary.formattedExpense(symbol: _currencySymbol),
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -956,7 +971,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           ),
                         ),
                         Text(
-                          item.formattedAmount(),
+                          item.formattedAmount(symbol: _currencySymbol),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: isSelected
@@ -1012,7 +1027,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
             const SizedBox(height: 2),
             Text(
-              touchedItem.formattedAmount(),
+              touchedItem.formattedAmount(symbol: _currencySymbol),
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -1043,7 +1058,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         ),
         const SizedBox(height: 2),
         Text(
-          _summary.formattedExpense(),
+          _summary.formattedExpense(symbol: _currencySymbol),
           style: const TextStyle(
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
@@ -1170,7 +1185,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   ),
                                 ),
                                 Text(
-                                  '₹${NumberFormat('#,##,###').format(trend.income)}',
+                                  '$_currencySymbol${NumberFormat('#,##,###').format(trend.income)}',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -1190,7 +1205,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   ),
                                 ),
                                 Text(
-                                  '₹${NumberFormat('#,##,###').format(trend.expense)}',
+                                  '$_currencySymbol${NumberFormat('#,##,###').format(trend.expense)}',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -1213,7 +1228,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             ),
                           ),
                           Text(
-                            '${isPositive ? '+' : ''}₹${NumberFormat('#,##,###').format(net)}',
+                            '${isPositive ? '+' : ''}$_currencySymbol${NumberFormat('#,##,###').format(net)}',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -1249,19 +1264,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(Icons.home_rounded, 'Home', false, () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              } else {
-                context.go(AppRoutes.dashboard.path);
-              }
+              context.go(AppRoutes.dashboard.path);
             }),
             _buildNavItem(Icons.receipt_long_rounded, 'Transactions', false, () {
-              context.push(AppRoutes.transaction.path);
+              context.go(AppRoutes.transaction.path);
             }),
             const SizedBox(width: 48), // Spacer for center FAB
             _buildNavItem(Icons.bar_chart_rounded, 'Reports', true, () {}),
             _buildNavItem(Icons.settings_rounded, 'Settings', false, () {
-              context.push(AppRoutes.settings.path);
+              context.go(AppRoutes.settings.path);
             }),
           ],
         ),

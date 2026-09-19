@@ -139,8 +139,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
                     // Name Input
                     AppTextFormField(
                       controller: _nameController,
-                      labelText: "Your Full Name",
-                      hintText: "e.g. Nipul Daki",
+                      hintText: "Your Full Name",
                       textCapitalization: TextCapitalization.words,
                       textInputAction: TextInputAction.next,
                       prefixIcon: const Icon(
@@ -163,8 +162,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
                     // Email Input
                     AppTextFormField(
                       controller: _emailController,
-                      labelText: "Your Email Address",
-                      hintText: "e.g. nipul@example.com",
+                      hintText: "Your Email Address",
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _submitUser(),

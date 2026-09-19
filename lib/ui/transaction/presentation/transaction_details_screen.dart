@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
+import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
@@ -29,6 +32,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
   bool _isLoading = false;
   bool _wasModified = false;
   String _currencySymbol = '₹';
+  StreamSubscription<UserProfile>? _userProfileSubscription;
 
   @override
   void initState() {
@@ -36,6 +40,17 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     _dbService = serviceLocator<DatabaseService>();
     _transaction = widget.transaction;
     _loadData();
+    _userProfileSubscription = _dbService.onUserProfileChanged.listen((profile) {
+      if (mounted && profile.currencySymbol.isNotEmpty) {
+        setState(() => _currencySymbol = profile.currencySymbol);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _userProfileSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {

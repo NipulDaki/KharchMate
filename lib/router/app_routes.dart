@@ -17,6 +17,7 @@ enum AppRoutes {
   privacyPolicy,
   termsOfUse,
   helpSupport,
+  userProfile,
 }
 
 extension AppRouteExtension on AppRoutes {
@@ -54,6 +55,8 @@ extension AppRouteExtension on AppRoutes {
         return '/terms-of-use';
       case AppRoutes.helpSupport:
         return '/help-support';
+      case AppRoutes.userProfile:
+        return '/user-profile';
     }
   }
 
@@ -91,6 +94,8 @@ extension AppRouteExtension on AppRoutes {
         return 'TermsOfUse';
       case AppRoutes.helpSupport:
         return 'HelpSupport';
+      case AppRoutes.userProfile:
+        return 'UserProfile';
     }
   }
 }

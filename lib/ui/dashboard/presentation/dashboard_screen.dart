@@ -12,6 +12,7 @@ import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/database_service.dart';
+import 'package:kharch_mate/widgets/dashboard_banner_ad_widget.dart';
 import 'package:kharch_mate/widgets/month_year_picker_sheet.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -24,12 +25,15 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late final DatabaseService _dbService;
   StreamSubscription<void>? _transactionSubscription;
+  StreamSubscription<UserProfile>? _userProfileSubscription;
   UserProfile? _userProfile;
   FinancialSummary _summary = FinancialSummary.empty();
   List<TransactionItem> _recentTransactions = [];
   bool _isBalanceVisible = true;
   DateTime _selectedDate = DateTime.now();
   int _touchedPieIndex = -1;
+
+  String get _currencySymbol => _userProfile?.currencySymbol ?? '₹';
 
   @override
   void initState() {
@@ -41,11 +45,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _loadDashboardData();
       }
     });
+    _userProfileSubscription = _dbService.onUserProfileChanged.listen((profile) {
+      if (mounted) {
+        setState(() {
+          _userProfile = profile;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _transactionSubscription?.cancel();
+    _userProfileSubscription?.cancel();
     super.dispose();
   }
 
@@ -62,7 +74,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           _userProfile = user;
           _summary = summary;
-          _recentTransactions = recent;
+          _recentTransactions = recent.take(5).toList();
           _touchedPieIndex = -1;
         });
       }
@@ -143,15 +155,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         Row(
                           children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: AppColors.primaryLight,
-                              child: Text(
-                                userInitials,
-                                style: const TextStyle(
-                                  color: AppColors.primaryDark,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
+                            GestureDetector(
+                              onTap: () {
+                                context.push(AppRoutes.userProfile.path);
+                              },
+                              child: CircleAvatar(
+                                radius: 20,
+                                backgroundColor: AppColors.primaryLight,
+                                child: Text(
+                                  userInitials,
+                                  style: const TextStyle(
+                                    color: AppColors.primaryDark,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                             ),
@@ -180,7 +197,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     // Savings Card
                     _buildSavingsCard(theme),
 
-                    const SizedBox(height: AppDimens.dimen24),
+                    const SizedBox(height: AppDimens.dimen16),
+
+                    // Inline Banner Ad (above Pie Chart)
+                    const DashboardBannerAdWidget(),
+
+                    const SizedBox(height: AppDimens.dimen8),
 
                     // Expense by Category Section
                     _buildExpenseByCategory(theme),
@@ -307,7 +329,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: AppDimens.dimen8),
           Text(
-            _isBalanceVisible ? _summary.formattedBalance() : '••••••••',
+            _isBalanceVisible
+                ? _summary.formattedBalance(symbol: _currencySymbol)
+                : '••••••••',
             style: theme.textTheme.headlineMedium?.copyWith(
               color: AppColors.white,
               fontWeight: FontWeight.w700,
@@ -359,7 +383,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          _summary.formattedIncome(),
+                          _summary.formattedIncome(symbol: _currencySymbol),
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: AppColors.income,
                             fontWeight: FontWeight.w700,
@@ -412,7 +436,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          _summary.formattedExpense(),
+                          _summary.formattedExpense(symbol: _currencySymbol),
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: AppColors.expense,
                             fontWeight: FontWeight.w700,
@@ -468,7 +492,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _summary.formattedSavings(),
+                  _summary.formattedSavings(symbol: _currencySymbol),
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: AppColors.savings,
                     fontWeight: FontWeight.w700,
@@ -514,7 +538,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               if (hasExpenses)
                 Text(
-                  _summary.formattedExpense(),
+                  _summary.formattedExpense(symbol: _currencySymbol),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.expense,
                     fontWeight: FontWeight.w600,
@@ -622,7 +646,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         Text(
-                          item.formattedAmount(),
+                          item.formattedAmount(symbol: _currencySymbol),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: isSelected
@@ -676,7 +700,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 2),
             Text(
-              touchedItem.formattedAmount(),
+              touchedItem.formattedAmount(symbol: _currencySymbol),
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -707,7 +731,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(height: 2),
         Text(
-          _summary.formattedExpense(),
+          _summary.formattedExpense(symbol: _currencySymbol),
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
@@ -758,11 +782,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             TextButton(
-              onPressed: () async {
-                await context.push(AppRoutes.transaction.path);
-                if (mounted) {
-                  _loadDashboardData();
-                }
+              onPressed: () {
+                context.go(AppRoutes.transaction.path);
               },
               child: Text(
                 "View All",
@@ -793,7 +814,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           )
         else
-          ..._recentTransactions.map((tx) => _buildTransactionCard(tx, theme)),
+          ..._recentTransactions
+              .take(5)
+              .map((tx) => _buildTransactionCard(tx, theme)),
       ],
     );
   }
@@ -857,7 +880,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             Text(
-              tx.formattedAmount(),
+              tx.formattedAmount(currencySymbol: _currencySymbol),
               style: theme.textTheme.titleSmall?.copyWith(
                 color: isIncome ? AppColors.income : AppColors.expense,
                 fontWeight: FontWeight.w700,
@@ -885,25 +908,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Icons.receipt_long_rounded,
               "Transactions",
               false,
-              () async {
-                await context.push(AppRoutes.transaction.path);
-                if (mounted) {
-                  _loadDashboardData();
-                }
+              () {
+                context.go(AppRoutes.transaction.path);
               },
             ),
             const SizedBox(width: 48), // Spacer for FAB
-            _buildNavItem(Icons.bar_chart_rounded, "Reports", false, () async {
-              await context.push(AppRoutes.report.path);
-              if (mounted) {
-                _loadDashboardData();
-              }
+            _buildNavItem(Icons.bar_chart_rounded, "Reports", false, () {
+              context.go(AppRoutes.report.path);
             }),
-            _buildNavItem(Icons.settings_rounded, "Settings", false, () async {
-              await context.push(AppRoutes.settings.path);
-              if (mounted) {
-                _loadDashboardData();
-              }
+            _buildNavItem(Icons.settings_rounded, "Settings", false, () {
+              context.go(AppRoutes.settings.path);
             }),
           ],
         ),

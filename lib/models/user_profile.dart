@@ -86,4 +86,15 @@ class UserProfile {
     }
     return parts[0][0].toUpperCase();
   }
+
+  factory UserProfile.empty() {
+    final now = DateTime.now();
+    return UserProfile(
+      name: '',
+      currencyCode: 'INR',
+      currencySymbol: '₹',
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
 }

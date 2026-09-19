@@ -10,6 +10,7 @@ import 'package:kharch_mate/ui/settings/presentation/help_support_screen.dart';
 import 'package:kharch_mate/ui/settings/presentation/privacy_policy_screen.dart';
 import 'package:kharch_mate/ui/settings/presentation/settings_screen.dart';
 import 'package:kharch_mate/ui/settings/presentation/terms_screen.dart';
+import 'package:kharch_mate/ui/settings/presentation/user_profile_screen.dart';
 import 'package:kharch_mate/ui/splash/presentation/splash_screen.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
 import 'package:kharch_mate/ui/transaction/presentation/add_transaction_screen.dart';
@@ -77,6 +78,11 @@ class AppRouter {
         name: AppRoutes.helpSupport.name,
         path: AppRoutes.helpSupport.path,
         builder: (context, state) => const HelpSupportScreen(),
+      ),
+      GoRoute(
+        name: AppRoutes.userProfile.name,
+        path: AppRoutes.userProfile.path,
+        builder: (context, state) => const UserProfileScreen(),
       ),
       GoRoute(
         name: AppRoutes.transaction.name,
