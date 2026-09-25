@@ -44,22 +44,25 @@ jobs:
         run: flutter analyze
 
       - name: Configure Keystore & Signing
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "Decoding release keystore..."
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/kharchmate-keystore.jks
-          echo "Creating key.properties..."
-          cat <<EOF > android/key.properties
-          storePassword=$KEYSTORE_PASSWORD
-          keyPassword=$KEY_PASSWORD
-          keyAlias=$KEY_ALIAS
-          storeFile=kharchmate-keystore.jks
-          EOF
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Decoding release keystore..."
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/kharchmate-keystore.jks
+            echo "Creating key.properties..."
+            {
+              echo "storePassword=$KEYSTORE_PASSWORD"
+              echo "keyPassword=$KEY_PASSWORD"
+              echo "keyAlias=$KEY_ALIAS"
+              echo "storeFile=kharchmate-keystore.jks"
+            } > android/key.properties
+          else
+            echo "KEYSTORE_BASE64 secret not found. Skipping keystore setup (debug signing will be used)."
+          fi
 
       - name: Build Android App Bundle (.aab)
         run: flutter build appbundle --release
