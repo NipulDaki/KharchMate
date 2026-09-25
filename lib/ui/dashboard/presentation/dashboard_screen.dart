@@ -29,7 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   UserProfile? _userProfile;
   FinancialSummary _summary = FinancialSummary.empty();
   List<TransactionItem> _recentTransactions = [];
-  bool _isBalanceVisible = true;
+  final bool _isBalanceVisible = true;
   DateTime _selectedDate = DateTime.now();
   int _touchedPieIndex = -1;
 
@@ -45,7 +45,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _loadDashboardData();
       }
     });
-    _userProfileSubscription = _dbService.onUserProfileChanged.listen((profile) {
+    _userProfileSubscription = _dbService.onUserProfileChanged.listen((
+      profile,
+    ) {
       if (mounted) {
         setState(() {
           _userProfile = profile;
@@ -303,27 +305,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: AppColors.white.withValues(alpha: 0.9),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _isBalanceVisible = !_isBalanceVisible;
-                      });
-                    },
-                    child: Icon(
-                      _isBalanceVisible
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      size: 18,
-                      color: AppColors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
                 ],
-              ),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: AppColors.white,
-                size: 16,
               ),
             ],
           ),
