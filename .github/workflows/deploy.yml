@@ -1,0 +1,115 @@
+name: KharchMate CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release Android App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze
+
+      - name: Configure Keystore & Signing
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "Decoding release keystore..."
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/kharchmate-keystore.jks
+          echo "Creating key.properties..."
+          cat <<EOF > android/key.properties
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=kharchmate-keystore.jks
+          EOF
+
+      - name: Build Android App Bundle (.aab)
+        run: flutter build appbundle --release
+
+      - name: Build Android APK (.apk)
+        run: flutter build apk --release
+
+      - name: Upload Release AAB to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Upload Release APK to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Extract Version & Generate Tag
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        id: version_info
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr -d '\r\n')
+          TAG="v${VERSION}-build.${{ github.run_number }}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: KharchMate v${{ env.VERSION }} (Build ${{ github.run_number }})
+          body: |
+            ## KharchMate Automated Release 🚀
+
+            - **Version:** `${{ env.VERSION }}`
+            - **Build Number:** `${{ github.run_number }}`
+            - **Commit:** `${{ github.sha }}`
+            - **Triggered By:** `${{ github.actor }}`
+
+            ### 📦 Release Artifacts
+            - **`app-release.aab`**: Signed Android App Bundle (Ready for Google Play Store upload)
+            - **`app-release.apk`**: Signed Android APK (For direct device installation & testing)
+          files: |
+            build/app/outputs/bundle/release/app-release.aab
+            build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
