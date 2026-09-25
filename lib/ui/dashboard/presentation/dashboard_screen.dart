@@ -483,11 +483,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
-          const Icon(
-            Icons.arrow_forward_ios_rounded,
-            color: AppColors.textHint,
-            size: 14,
-          ),
         ],
       ),
     );
