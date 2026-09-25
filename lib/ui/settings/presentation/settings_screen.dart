@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
@@ -24,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   UserProfile? _userProfile;
   // ignore: unused_field
   bool _isDarkMode = false;
+  String _appVersion = '1.0';
   StreamSubscription<UserProfile>? _userProfileSubscription;
   StreamSubscription<bool>? _adFreeSubscription;
 
@@ -32,6 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _dbService = serviceLocator<DatabaseService>();
     _loadUserProfile();
+    _loadAppVersion();
     _userProfileSubscription = _dbService.onUserProfileChanged.listen((
       profile,
     ) {
@@ -69,6 +73,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _userProfile = user;
           _isDarkMode = user?.isDarkMode ?? false;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        final parts = info.version.split('.');
+        final formattedVersion =
+            parts.length >= 2 ? '${parts[0]}.${parts[1]}' : info.version;
+        setState(() {
+          _appVersion = formattedVersion;
         });
       }
     } catch (_) {}
@@ -519,7 +537,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: AppColors.dividerColor,
                     ),
 
-                    // 8. Delete My Data
+                    // 8. Rate & Review Us
+                    _buildSettingsTile(
+                      icon: Icons.star_rounded,
+                      iconColor: const Color(0xFFF57C00),
+                      iconBackgroundColor: const Color(0xFFFFF3E0),
+                      title: 'Rate & Review Us',
+                      subtitle: 'Support us with a review on Google Play',
+                      onTap: _showReviewDialog,
+                    ),
+                    const Divider(
+                      height: 1,
+                      indent: 64,
+                      color: AppColors.dividerColor,
+                    ),
+
+                    // 9. App Version
+                    _buildSettingsTile(
+                      icon: Icons.info_outline_rounded,
+                      title: 'App Version',
+                      showChevron: false,
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F4F8),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          _appVersion,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Divider(
+                      height: 1,
+                      indent: 64,
+                      color: AppColors.dividerColor,
+                    ),
+
+                    // 9. Delete My Data
                     _buildSettingsTile(
                       icon: Icons.delete_forever_rounded,
                       iconColor: AppColors.expense,
@@ -535,7 +598,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: AppColors.dividerColor,
                     ),
 
-                    // 9. Logout
+                    // 10. Logout
                     _buildSettingsTile(
                       icon: Icons.logout_rounded,
                       iconColor: AppColors.expense,
@@ -544,6 +607,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       titleColor: AppColors.expense,
                       showChevron: false,
                       onTap: _showLogoutDialog,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'KharchMate',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Version $_appVersion',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textHint,
+                      ),
                     ),
                   ],
                 ),
@@ -837,6 +925,156 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showReviewDialog() {
+    int selectedRating = 5;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: AppColors.white,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFF3E0),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.star_rounded,
+                    color: Color(0xFFF57C00),
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Enjoying KharchMate?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your review on Google Play helps us improve and helps others take control of their expenses!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    color: AppColors.textSecondary,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    final starIndex = index + 1;
+                    return IconButton(
+                      onPressed: () {
+                        setDialogState(() {
+                          selectedRating = starIndex;
+                        });
+                      },
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      constraints: const BoxConstraints(),
+                      icon: Icon(
+                        starIndex <= selectedRating
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        color: const Color(0xFFF57C00),
+                        size: 32,
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _launchPlayStoreReview();
+                    },
+                    icon: const Icon(Icons.rate_review_rounded, size: 18),
+                    label: const Text(
+                      'Rate on Google Play',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text(
+                    'Maybe Later',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _launchPlayStoreReview() async {
+    const packageName = 'com.nipul.kharchmate';
+    final marketUri = Uri.parse('market://details?id=$packageName');
+    final webUri = Uri.parse(
+      'https://play.google.com/store/apps/details?id=$packageName',
+    );
+
+    try {
+      if (await canLaunchUrl(marketUri)) {
+        await launchUrl(marketUri, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(webUri)) {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(webUri, mode: LaunchMode.externalNonBrowserApplication);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open Google Play Store.'),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildSettingsTile({
     required IconData icon,
     required String title,
@@ -845,7 +1083,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Color? iconBackgroundColor,
     Color? titleColor,
     bool showChevron = true,
-    required VoidCallback onTap,
+    Widget? trailing,
+    VoidCallback? onTap,
   }) {
     return InkWell(
       onTap: onTap,
@@ -894,7 +1133,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            if (showChevron)
+            if (trailing != null)
+              trailing
+            else if (showChevron)
               const Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.textPrimary,
