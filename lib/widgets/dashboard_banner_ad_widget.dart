@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/environment/app_environment.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/services/ad_service.dart';
@@ -206,9 +207,11 @@ class _DashboardBannerAdWidgetState extends State<DashboardBannerAdWidget> {
                     color: const Color(0xFFF0F4F8),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text(
-                    'Ad',
-                    style: TextStyle(
+                  child: Text(
+                    AppConfig.current.isProduction
+                        ? 'Ad'
+                        : 'Ad (${AppConfig.current.environmentName})',
+                    style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textHint,

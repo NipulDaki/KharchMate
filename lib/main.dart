@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/environment/app_environment.dart';
 import 'package:kharch_mate/router/app_router.dart';
 import 'package:kharch_mate/theme/themes.dart';
 
-Future<void> main() async {
+/// Application bootstrap entry point with customizable environment.
+Future<void> main({
+  AppEnvironment environment = AppEnvironment.production,
+}) async {
   WidgetsFlutterBinding.ensureInitialized();
-  await setupServiceLocator();
+
+  // Initialize environment configuration
+  final config = AppConfig(environment: environment);
+  AppConfig.initialize(config);
+
+  // Initialize dependencies with active AppConfig
+  await setupServiceLocator(config: config);
 
   runApp(const MyApp());
 }
@@ -13,14 +23,13 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'KharchMate',
+      title: AppConfig.current.appTitle,
       theme: AppThemes.coreTheme,
       routerConfig: AppRouter.router,
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: AppConfig.current.isDevelopment,
       supportedLocales: const [Locale('en', '')],
     );
   }

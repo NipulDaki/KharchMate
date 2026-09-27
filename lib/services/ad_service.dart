@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:kharch_mate/environment/app_environment.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
-import 'package:kharch_mate/utility/admob_constants.dart';
 
 /// Centralized service handling Google AdMob Banners, Rewarded Video Ads,
 /// and tracking the 3-day Ad-Free pass reward state.
@@ -11,6 +11,7 @@ class AdService {
   static const String _adFreeUntilKey = 'ad_free_until_timestamp';
 
   final SecureStorageService storageService;
+  final AppConfig appConfig;
   DateTime? _adFreeUntil;
   final StreamController<bool> _adFreeController =
       StreamController<bool>.broadcast();
@@ -18,7 +19,10 @@ class AdService {
   RewardedAd? _rewardedAd;
   bool _isRewardedAdLoading = false;
 
-  AdService({required this.storageService});
+  AdService({
+    required this.storageService,
+    AppConfig? appConfig,
+  }) : appConfig = appConfig ?? AppConfig.current;
 
   /// Stream that emits whenever the ad-free status changes.
   Stream<bool> get onAdFreeChanged => _adFreeController.stream;
@@ -126,7 +130,7 @@ class AdService {
     _isRewardedAdLoading = true;
     try {
       RewardedAd.load(
-        adUnitId: AdMobConstants.rewardedAdUnitId,
+        adUnitId: appConfig.rewardedAdUnitId,
         request: const AdRequest(),
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (ad) {
@@ -194,7 +198,7 @@ class AdService {
     required Function(LoadAdError) onAdFailedToLoad,
   }) {
     return BannerAd(
-      adUnitId: AdMobConstants.bannerAdUnitId,
+      adUnitId: appConfig.bannerAdUnitId,
       size: AdSize.banner, // 320x50 standard banner
       request: const AdRequest(),
       listener: BannerAdListener(
