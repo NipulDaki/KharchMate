@@ -99,11 +99,13 @@ class TermsScreen extends StatelessWidget {
                                 color: AppColors.textHint,
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                'Last updated: September 2026',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
+                              Expanded(
+                                child: Text(
+                                  'Last updated: September 2026',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
@@ -320,13 +322,15 @@ class TermsScreen extends StatelessWidget {
                               color: AppColors.primary,
                             ),
                             SizedBox(width: 8),
-                            Text(
-                              'manavinfotech8@gmail.com',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primaryDark,
-                                decoration: TextDecoration.underline,
+                            Flexible(
+                              child: Text(
+                                'manavinfotech8@gmail.com',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryDark,
+                                  decoration: TextDecoration.underline,
+                                ),
                               ),
                             ),
                             SizedBox(width: 8),
@@ -371,12 +375,14 @@ class TermsScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
       ],

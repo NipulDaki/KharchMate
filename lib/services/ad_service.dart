@@ -13,16 +13,15 @@ class AdService {
   final SecureStorageService storageService;
   final AppConfig appConfig;
   DateTime? _adFreeUntil;
+  Timer? _expiryTimer;
   final StreamController<bool> _adFreeController =
       StreamController<bool>.broadcast();
 
   RewardedAd? _rewardedAd;
   bool _isRewardedAdLoading = false;
 
-  AdService({
-    required this.storageService,
-    AppConfig? appConfig,
-  }) : appConfig = appConfig ?? AppConfig.current;
+  AdService({required this.storageService, AppConfig? appConfig})
+    : appConfig = appConfig ?? AppConfig.current;
 
   /// Stream that emits whenever the ad-free status changes.
   Stream<bool> get onAdFreeChanged => _adFreeController.stream;
@@ -77,6 +76,7 @@ class AdService {
         final parsed = DateTime.tryParse(savedIso);
         if (parsed != null && DateTime.now().isBefore(parsed)) {
           _adFreeUntil = parsed;
+          _scheduleExpiryTimer();
         } else {
           _adFreeUntil = null;
         }
@@ -87,11 +87,29 @@ class AdService {
     _notifyAdFreeChanged();
   }
 
+  void _scheduleExpiryTimer() {
+    _expiryTimer?.cancel();
+    if (_adFreeUntil != null && isAdFree) {
+      final remaining = _adFreeUntil!.difference(DateTime.now());
+      _expiryTimer = Timer(remaining, () {
+        _notifyAdFreeChanged();
+      });
+    }
+  }
+
   /// Grants the user an ad-free pass for a given duration (defaults to 3 days).
-  /// If the user already has active time, extends their existing expiration!
-  Future<void> grantAdFreePass({Duration duration = const Duration(days: 3)}) async {
-    final currentExpiry = isAdFree ? _adFreeUntil! : DateTime.now();
-    final newExpiry = currentExpiry.add(duration);
+  /// If the user already has an active ad-free pass, it does NOT increase or
+  /// extend the days. Once the 3 days have completed and the pass expires,
+  /// calling this again will grant a new 3-day pass.
+  Future<bool> grantAdFreePass({
+    Duration duration = const Duration(days: 3),
+  }) async {
+    if (isAdFree) {
+      // Pass is already active; do not increase the days.
+      return false;
+    }
+
+    final newExpiry = DateTime.now().add(duration);
     _adFreeUntil = newExpiry;
 
     try {
@@ -101,7 +119,9 @@ class AdService {
       );
     } catch (_) {}
 
+    _scheduleExpiryTimer();
     _notifyAdFreeChanged();
+    return true;
   }
 
   void _notifyAdFreeChanged() {
@@ -213,6 +233,7 @@ class AdService {
 
   /// Dispose any active resources.
   Future<void> dispose() async {
+    _expiryTimer?.cancel();
     _rewardedAd?.dispose();
     await _adFreeController.close();
   }

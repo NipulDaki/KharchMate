@@ -733,12 +733,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: _showWatchRewardedAdDialog,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: isAdFree
                         ? AppColors.incomeLight
@@ -750,40 +750,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ? Icons.verified_rounded
                         : Icons.card_giftcard_rounded,
                     color: isAdFree ? AppColors.income : AppColors.primary,
-                    size: 22,
+                    size: 20,
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Text(
-                            isAdFree
-                                ? 'Ad-Free Pass Active'
-                                : 'Go Ad-Free for 3 Days',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                          Flexible(
+                            child: Text(
+                              isAdFree
+                                  ? 'Ad-Free Pass Active'
+                                  : 'Go Ad-Free for 3 Days',
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 4),
                           Text(
                             isAdFree ? '✨' : '🎁',
-                            style: const TextStyle(fontSize: 14),
+                            style: const TextStyle(fontSize: 13),
                           ),
                         ],
                       ),
                       const SizedBox(height: 2),
                       Text(
                         isAdFree
-                            ? '$remainingText • Tap to extend +3 days'
+                            ? '$remainingText • Ads are hidden'
                             : 'Watch a short video to remove banner ads',
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 12,
                           color: isAdFree
                               ? AppColors.income
                               : AppColors.textSecondary,
@@ -794,9 +796,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: isAdFree ? AppColors.incomeLight : AppColors.primary,
                     borderRadius: BorderRadius.circular(20),
@@ -822,19 +825,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isAdFree = _adService?.isAdFree ?? false;
     final remainingText = _adService?.remainingAdFreeText ?? '';
 
+    if (isAdFree) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Text('✨ ', style: TextStyle(fontSize: 22)),
+              Expanded(
+                child: Text(
+                  'Ad-Free Pass Active',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'You currently have an active ad-free pass ($remainingText).\n\nBanner ads are hidden. You can still watch a sponsor video, but it will not increase your current pass validity. Once your 3-day pass completes, watching a video will grant 3 days again.',
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              height: 1.45,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: AppColors.textHint),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _playRewardedAd();
+              },
+              child: const Text('Watch Video'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.white,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
+        title: const Row(
           children: [
-            Text(isAdFree ? '✨ ' : '🎁 ', style: const TextStyle(fontSize: 22)),
+            Text('🎁 ', style: TextStyle(fontSize: 22)),
             Expanded(
               child: Text(
-                isAdFree ? 'Extend Ad-Free Pass' : 'Unlock 3-Day Ad-Free Pass',
-                style: const TextStyle(
+                'Unlock 3-Day Ad-Free Pass',
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                   fontSize: 18,
@@ -843,11 +904,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
-        content: Text(
-          isAdFree
-              ? 'You currently have an active ad-free pass ($remainingText).\n\nWatching another short sponsor video will add +3 full days (72 hours) to your pass!'
-              : 'Watch a short sponsor video to completely remove all banner ads across KharchMate for the next 3 days (72 hours).',
-          style: const TextStyle(
+        content: const Text(
+          'Watch a short sponsor video to completely remove all banner ads across KharchMate for the next 3 days (72 hours).',
+          style: TextStyle(
             color: AppColors.textSecondary,
             height: 1.45,
             fontSize: 14,
@@ -897,17 +956,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
+    final wasAdFree = _adService!.isAdFree;
+
     _adService!.showRewardedAd(
       onUserEarnedReward: () {
         if (mounted) {
           setState(() {});
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
-                '🎉 Congratulations! 3 Days of Ad-Free experience activated!',
+                wasAdFree
+                    ? '🎉 Thank you for watching! Ad-free pass remains active (${_adService!.remainingAdFreeText}).'
+                    : '🎉 Congratulations! 3 Days of Ad-Free experience activated!',
               ),
               backgroundColor: AppColors.income,
-              duration: Duration(seconds: 3),
+              duration: const Duration(seconds: 3),
             ),
           );
         }

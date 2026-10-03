@@ -152,14 +152,20 @@ class _DashboardBannerAdWidgetState extends State<DashboardBannerAdWidget> {
       return;
     }
 
+    final wasAdFree = _adService!.isAdFree;
+
     _adService!.showRewardedAd(
       onUserEarnedReward: () {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('🎉 3-Day Ad-Free Pass unlocked! Banner removed.'),
+            SnackBar(
+              content: Text(
+                wasAdFree
+                    ? '🎉 Thank you for watching! Ad-free pass remains active.'
+                    : '🎉 3-Day Ad-Free Pass unlocked! Banner removed.',
+              ),
               backgroundColor: AppColors.income,
-              duration: Duration(seconds: 3),
+              duration: const Duration(seconds: 3),
             ),
           );
         }

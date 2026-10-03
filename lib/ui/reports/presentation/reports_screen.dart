@@ -528,7 +528,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
           const SizedBox(height: AppDimens.dimen16),
           SizedBox(
-            height: 200,
+            height: 220,
             child: _trends.isEmpty
                 ? Center(
                     child: Text(
@@ -620,15 +620,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 32,
+              reservedSize: 34,
               interval: maxY > 0 ? maxY / 3 : 1,
               getTitlesWidget: (value, meta) {
                 if (value == 0) {
-                  return const Text(
-                    '0',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textHint,
+                  return SideTitleWidget(
+                    meta: meta,
+                    space: 4,
+                    child: const Text(
+                      '0',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textHint,
+                      ),
                     ),
                   );
                 }
@@ -640,11 +644,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 } else {
                   formatted = value.toStringAsFixed(0);
                 }
-                return Text(
-                  formatted,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textHint,
+                return SideTitleWidget(
+                  meta: meta,
+                  space: 4,
+                  child: Text(
+                    formatted,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textHint,
+                    ),
                   ),
                 );
               },
@@ -653,13 +661,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              reservedSize: 32,
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
                 if (index < 0 || index >= _trends.length) {
                   return const SizedBox.shrink();
                 }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                return SideTitleWidget(
+                  meta: meta,
+                  space: 6,
                   child: Text(
                     _trends[index].monthLabel,
                     style: const TextStyle(
