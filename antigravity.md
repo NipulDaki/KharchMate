@@ -6,7 +6,7 @@
 
 ## 📌 Project Overview
 - **App Name:** KharchMate
-- **Android Application ID / Namespace:** `com.nipul.kharchmate`
+- **Android Application ID / Namespace:** `com.nipuldaki.kharchamate`
 - **Platform:** Flutter (Android & iOS)
 - **SDK Target:** Flutter `>=3.47.2`, Dart `>=3.13.2`
 - **Core Purpose:** 100% Offline-first personal expense tracker & budget management app with visual analytics, zero cloud lock-in, and full data privacy.
@@ -128,7 +128,7 @@ KharchMate provides environment isolation across Development, Staging, and Produ
 
 ## 📦 Native Platform, ProGuard & CI/CD Pipeline
 
-- **Application ID / Package**: `com.nipul.kharchmate`
+- **Application ID / Package**: `com.nipuldaki.kharchamate`
 - **Release Signing**: Configured in `android/app/build.gradle.kts` via `android/key.properties`.
 - **ProGuard / R8 Rules (`android/app/proguard-rules.pro`)**:
   - SQLite FFI, Google Mobile Ads SDK, and Flutter plugin bindings preserved.

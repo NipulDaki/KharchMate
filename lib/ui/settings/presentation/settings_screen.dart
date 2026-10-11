@@ -1109,7 +1109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _launchPlayStoreReview() async {
-    const packageName = 'com.nipul.kharchmate';
+    const packageName = 'com.nipuldaki.kharchamate';
     final marketUri = Uri.parse('market://details?id=$packageName');
     final webUri = Uri.parse(
       'https://play.google.com/store/apps/details?id=$packageName',

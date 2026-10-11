@@ -552,7 +552,7 @@ KharchMate is engineered with user privacy as a foundational principle:
 ## 12. Release Engineering, ProGuard & CI/CD Pipeline
 
 ### Release Configuration
-- **Application ID**: `com.nipul.kharchmate` (Android namespace and application ID).
+- **Application ID**: `com.nipuldaki.kharchamate` (Android namespace and application ID).
 - **Keystore Signing**: Automated release signing configured in `android/app/build.gradle.kts` reading credentials from `key.properties`.
 - **ProGuard / R8 Rules (`android/app/proguard-rules.pro`)**:
   - Preserves SQLite FFI and native driver bindings.

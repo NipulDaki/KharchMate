@@ -1,4 +1,4 @@
-package com.nipul.kharchmate
+package com.nipuldaki.kharchamate
 
 import io.flutter.embedding.android.FlutterActivity
 
