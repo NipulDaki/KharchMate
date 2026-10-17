@@ -169,43 +169,25 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                   children: [
                     // 1. Top Centered Live Preview
                     Center(
-                      child: Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          Container(
-                            width: 96,
-                            height: 96,
-                            decoration: BoxDecoration(
-                              color: activeColor.withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: activeColor.withValues(alpha: 0.2),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
+                      child: Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          color: activeColor.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: activeColor.withValues(alpha: 0.2),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
                             ),
-                            child: Icon(
-                              activeIcon,
-                              size: 46,
-                              color: activeColor,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt_rounded,
-                              size: 14,
-                              color: AppColors.white,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Icon(
+                          activeIcon,
+                          size: 46,
+                          color: activeColor,
+                        ),
                       ),
                     ),
 

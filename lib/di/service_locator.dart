@@ -4,6 +4,7 @@ import 'package:kharch_mate/environment/app_environment.dart';
 import 'package:kharch_mate/router/app_router.dart';
 import 'package:kharch_mate/services/ad_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
+import 'package:kharch_mate/services/notification_service.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
 
 final serviceLocator = GetIt.instance;
@@ -22,6 +23,9 @@ Future<void> setupServiceLocator({AppConfig? config}) async {
   );
   await adService.init();
 
+  final notificationService = NotificationService();
+  await notificationService.init();
+
   serviceLocator
     // App Environment Configuration
     ..registerSingleton<AppConfig>(appConfig)
@@ -34,6 +38,8 @@ Future<void> setupServiceLocator({AppConfig? config}) async {
     ..registerSingleton<SecureStorageService>(secureStorage)
     // AdMob Ads & Reward Service
     ..registerSingleton<AdService>(adService)
+    // Local Notification Service
+    ..registerSingleton<NotificationService>(notificationService)
     // Application Routing
     ..registerLazySingleton(() => AppRouter());
 }
