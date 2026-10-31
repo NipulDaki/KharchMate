@@ -10,12 +10,14 @@ class AppConfig {
   final String? customApiUrl;
   final String? customBannerAdId;
   final String? customRewardedAdId;
+  final String? customAppOpenAdId;
 
   const AppConfig({
     required this.environment,
     this.customApiUrl,
     this.customBannerAdId,
     this.customRewardedAdId,
+    this.customAppOpenAdId,
   });
 
   /// Active global configuration instance.
@@ -102,11 +104,15 @@ class AppConfig {
       'ca-app-pub-9185976312211555/2800683417';
   static const String prodAndroidRewardedId =
       'ca-app-pub-9185976312211555/7141674098';
+  static const String prodAndroidAppOpenId =
+      'ca-app-pub-9185976312211555/5661785479';
 
   static const String prodIosBannerId =
       'ca-app-pub-9185976312211555/2078628683';
   static const String prodIosRewardedId =
       'ca-app-pub-9185976312211555/8316733971';
+  static const String prodIosAppOpenId =
+      'ca-app-pub-9185976312211555/5661785479';
 
   // Google Official Test App IDs
   static const String testAndroidAppId =
@@ -118,11 +124,15 @@ class AppConfig {
       'ca-app-pub-3940256099942544/6300978111';
   static const String testAndroidRewardedId =
       'ca-app-pub-3940256099942544/5224354917';
+  static const String testAndroidAppOpenId =
+      'ca-app-pub-3940256099942544/9257395921';
 
   static const String testIosBannerId =
       'ca-app-pub-3940256099942544/2934735716';
   static const String testIosRewardedId =
       'ca-app-pub-3940256099942544/1712485313';
+  static const String testIosAppOpenId =
+      'ca-app-pub-3940256099942544/5575463023';
 
   // ===========================================================================
   // PLATFORM & ENVIRONMENT ADMOB RESOLVERS
@@ -162,5 +172,28 @@ class AppConfig {
       return isProduction ? prodIosRewardedId : testIosRewardedId;
     }
     return testAndroidRewardedId;
+  }
+
+  /// Resolves App Open Ad Unit ID based on platform and active environment.
+  String get appOpenAdUnitId {
+    if (customAppOpenAdId != null && customAppOpenAdId!.isNotEmpty) {
+      return customAppOpenAdId!;
+    }
+    if (Platform.isAndroid) {
+      return isProduction ? prodAndroidAppOpenId : testAndroidAppOpenId;
+    } else if (Platform.isIOS) {
+      return isProduction ? prodIosAppOpenId : testIosAppOpenId;
+    }
+    return testAndroidAppOpenId;
+  }
+
+  /// Resolves Test App Open Ad Unit ID based on platform.
+  String get testAppOpenAdUnitId {
+    if (Platform.isAndroid) {
+      return testAndroidAppOpenId;
+    } else if (Platform.isIOS) {
+      return testIosAppOpenId;
+    }
+    return testAndroidAppOpenId;
   }
 }

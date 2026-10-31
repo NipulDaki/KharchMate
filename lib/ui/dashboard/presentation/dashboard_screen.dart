@@ -11,6 +11,7 @@ import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
+import 'package:kharch_mate/services/ad_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
 import 'package:kharch_mate/widgets/dashboard_banner_ad_widget.dart';
 import 'package:kharch_mate/widgets/month_year_picker_sheet.dart';
@@ -54,6 +55,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     });
+
+    // Show App Open Ad when landing on Dashboard after app launch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showAppOpenAdIfAvailable();
+    });
+  }
+
+  void _showAppOpenAdIfAvailable() {
+    if (serviceLocator.isRegistered<AdService>()) {
+      final adService = serviceLocator<AdService>();
+      adService.showAppOpenAdOnDashboard();
+    }
   }
 
   @override

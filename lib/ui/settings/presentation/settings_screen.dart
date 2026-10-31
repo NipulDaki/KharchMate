@@ -1109,23 +1109,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _launchPlayStoreReview() async {
-    const packageName = 'com.nipuldaki.kharchamate';
-    final marketUri = Uri.parse('market://details?id=$packageName');
-    final webUri = Uri.parse(
-      'https://play.google.com/store/apps/details?id=$packageName',
+    final playStoreUri = Uri.parse(
+      'https://play.google.com/store/apps/details?id=com.nipuldaki.kharchamate',
     );
 
     try {
-      if (await canLaunchUrl(marketUri)) {
-        await launchUrl(marketUri, mode: LaunchMode.externalApplication);
-      } else if (await canLaunchUrl(webUri)) {
-        await launchUrl(webUri, mode: LaunchMode.externalApplication);
-      } else {
-        await launchUrl(webUri, mode: LaunchMode.externalNonBrowserApplication);
+      final launched = await launchUrl(
+        playStoreUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        await launchUrl(
+          playStoreUri,
+          mode: LaunchMode.platformDefault,
+        );
       }
     } catch (_) {
       try {
-        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+        await launchUrl(
+          playStoreUri,
+          mode: LaunchMode.platformDefault,
+        );
       } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

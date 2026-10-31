@@ -20,6 +20,12 @@ class AdService {
   RewardedAd? _rewardedAd;
   bool _isRewardedAdLoading = false;
 
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoading = false;
+  DateTime? _appOpenLoadTime;
+  bool _isShowingAppOpenAd = false;
+  Completer<bool>? _appOpenCompleter;
+
   AdService({required this.storageService, AppConfig? appConfig})
     : appConfig = appConfig ?? AppConfig.current;
 
@@ -58,7 +64,8 @@ class AdService {
     // 1. Initialize Google Mobile Ads SDK safely
     try {
       await MobileAds.instance.initialize();
-      // Preload a rewarded video ad so it is ready when user visits Settings
+      // Preload App Open ad and Rewarded Video ad
+      loadAppOpenAd();
       loadRewardedAd();
     } catch (e) {
       debugPrint('AdMob SDK initialization warning: $e');
@@ -231,10 +238,217 @@ class AdService {
     )..load();
   }
 
+  // ===========================================================================
+  // APP OPEN AD METHODS
+  // ===========================================================================
+
+  bool _hasShownAppOpenAdOnLaunch = false;
+
+  /// Whether an App Open ad is loaded, not expired (< 4 hrs), and ready to display.
+  bool get isAppOpenAdAvailable {
+    return !isAdFree &&
+        _appOpenAd != null &&
+        _appOpenLoadTime != null &&
+        DateTime.now().difference(_appOpenLoadTime!) < const Duration(hours: 4);
+  }
+
+  /// Whether an App Open ad is currently loading.
+  bool get isAppOpenAdLoading => _isAppOpenAdLoading;
+
+  /// Whether an App Open ad is currently being shown on screen.
+  bool get isShowingAppOpenAd => _isShowingAppOpenAd;
+
+  /// Resets the launch ad flag (e.g., if needed).
+  void resetAppOpenAdLaunchFlag() {
+    _hasShownAppOpenAdOnLaunch = false;
+  }
+
+  /// Preloads an AppOpenAd.
+  void loadAppOpenAd({
+    VoidCallback? onLoaded,
+    Function(LoadAdError)? onFailed,
+  }) {
+    if (isAdFree || isAppOpenAdAvailable || _isAppOpenAdLoading) {
+      if (isAppOpenAdAvailable) onLoaded?.call();
+      return;
+    }
+
+    _loadAppOpenAdInternal(
+      appConfig.appOpenAdUnitId,
+      onLoaded: onLoaded,
+      onFailed: onFailed,
+    );
+  }
+
+  void _loadAppOpenAdInternal(
+    String adUnitId, {
+    VoidCallback? onLoaded,
+    Function(LoadAdError)? onFailed,
+  }) {
+    _isAppOpenAdLoading = true;
+    _appOpenCompleter = Completer<bool>();
+
+    debugPrint('Loading AppOpenAd with unit ID: $adUnitId');
+
+    try {
+      AppOpenAd.load(
+        adUnitId: adUnitId,
+        request: const AdRequest(),
+        adLoadCallback: AppOpenAdLoadCallback(
+          onAdLoaded: (ad) {
+            _appOpenAd = ad;
+            _appOpenLoadTime = DateTime.now();
+            _isAppOpenAdLoading = false;
+            debugPrint('AppOpenAd loaded successfully ($adUnitId).');
+            if (_appOpenCompleter != null && !_appOpenCompleter!.isCompleted) {
+              _appOpenCompleter!.complete(true);
+            }
+            onLoaded?.call();
+          },
+          onAdFailedToLoad: (error) {
+            debugPrint(
+              'AppOpenAd ($adUnitId) failed to load: ${error.message} (code: ${error.code})',
+            );
+
+            // In debug mode, if configured ad unit failed (e.g. brand new ad unit with No Fill code 3),
+            // fallback to the Google test AppOpenAd unit so developers can verify ads immediately.
+            if (kDebugMode && adUnitId != appConfig.testAppOpenAdUnitId) {
+              debugPrint(
+                'Debug mode: Retrying AppOpenAd with Google test unit: ${appConfig.testAppOpenAdUnitId}',
+              );
+              _loadAppOpenAdInternal(
+                appConfig.testAppOpenAdUnitId,
+                onLoaded: onLoaded,
+                onFailed: onFailed,
+              );
+              return;
+            }
+
+            _appOpenAd = null;
+            _appOpenLoadTime = null;
+            _isAppOpenAdLoading = false;
+            if (_appOpenCompleter != null && !_appOpenCompleter!.isCompleted) {
+              _appOpenCompleter!.complete(false);
+            }
+            onFailed?.call(error);
+          },
+        ),
+      );
+    } catch (e) {
+      _isAppOpenAdLoading = false;
+      if (_appOpenCompleter != null && !_appOpenCompleter!.isCompleted) {
+        _appOpenCompleter!.complete(false);
+      }
+      debugPrint('AdMob loadAppOpenAd exception: $e');
+    }
+  }
+
+  /// Shows the loaded AppOpenAd.
+  /// Calls [onComplete] when dismissed or if display fails.
+  void showAppOpenAd({
+    VoidCallback? onComplete,
+  }) {
+    if (!isAppOpenAdAvailable) {
+      onComplete?.call();
+      loadAppOpenAd();
+      return;
+    }
+
+    _isShowingAppOpenAd = true;
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _appOpenLoadTime = null;
+        _isShowingAppOpenAd = false;
+        onComplete?.call();
+        loadAppOpenAd(); // Preload next ad
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        debugPrint('AppOpenAd failed to show: ${error.message}');
+        ad.dispose();
+        _appOpenAd = null;
+        _appOpenLoadTime = null;
+        _isShowingAppOpenAd = false;
+        onComplete?.call();
+        loadAppOpenAd();
+      },
+    );
+
+    _appOpenAd!.show();
+  }
+
+  /// Shows the AppOpenAd when entering Dashboard on app launch.
+  /// If the ad is already loaded, it displays immediately.
+  /// If still loading, it waits up to [timeout] and displays upon load.
+  Future<void> showAppOpenAdOnDashboard({
+    Duration timeout = const Duration(seconds: 4),
+    VoidCallback? onDismissed,
+  }) async {
+    if (isAdFree || _hasShownAppOpenAdOnLaunch) {
+      return;
+    }
+
+    _hasShownAppOpenAdOnLaunch = true;
+
+    if (isAppOpenAdAvailable) {
+      showAppOpenAd(onComplete: onDismissed);
+      return;
+    }
+
+    if (!_isAppOpenAdLoading) {
+      loadAppOpenAd();
+    }
+
+    if (_isAppOpenAdLoading && _appOpenCompleter != null) {
+      try {
+        final success = await _appOpenCompleter!.future.timeout(timeout);
+        if (success && isAppOpenAdAvailable) {
+          showAppOpenAd(onComplete: onDismissed);
+        }
+      } catch (e) {
+        debugPrint('AppOpenAd dashboard wait timeout or error: $e');
+      }
+    }
+  }
+
+  /// Displays the AppOpenAd if available, or waits up to [timeout] if currently loading.
+  /// Calls [onComplete] once the ad is closed, fails, or if not available.
+  Future<void> showAppOpenAdWhenReady({
+    required VoidCallback onComplete,
+    Duration timeout = const Duration(milliseconds: 2000),
+  }) async {
+    if (isAdFree) {
+      onComplete();
+      return;
+    }
+
+    if (isAppOpenAdAvailable) {
+      showAppOpenAd(onComplete: onComplete);
+      return;
+    }
+
+    if (_isAppOpenAdLoading && _appOpenCompleter != null) {
+      try {
+        await _appOpenCompleter!.future.timeout(timeout);
+      } catch (_) {
+        // Timeout reached, proceed without ad
+      }
+    }
+
+    if (isAppOpenAdAvailable) {
+      showAppOpenAd(onComplete: onComplete);
+    } else {
+      onComplete();
+      loadAppOpenAd();
+    }
+  }
+
   /// Dispose any active resources.
   Future<void> dispose() async {
     _expiryTimer?.cancel();
     _rewardedAd?.dispose();
+    _appOpenAd?.dispose();
     await _adFreeController.close();
   }
 }
