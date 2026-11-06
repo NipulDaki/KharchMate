@@ -77,7 +77,7 @@ class NotificationService {
   /// Configures platform-specific initialization settings.
   Future<void> _initializePlugin() async {
     const androidSettings = AndroidInitializationSettings(
-      'ic_notification',
+      '@mipmap/ic_launcher',
     );
     const darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -143,8 +143,8 @@ class NotificationService {
       channelDescription: channelDescription,
       importance: Importance.high,
       priority: Priority.high,
-      icon: 'ic_notification',
-      largeIcon: DrawableResourceAndroidBitmap('app_icon'),
+      icon: '@mipmap/ic_launcher',
+      largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       color: Color(0xFFFF9800),
     );
 

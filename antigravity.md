@@ -98,8 +98,8 @@ KharchMate provides environment isolation across Development, Staging, and Produ
   - `init()`: Initializes MobileAds SDK and loads stored ad-free status.
   - `loadBannerAd(...)` & `disposeBannerAd()`: Handles banner ads with error recovery.
   - `loadRewardedAd()` & `showRewardedAd(...)`: Preloads and shows rewarded video ads.
-- **3-Day Ad-Free Pass Mechanics**:
-  - `grantAdFreePass({Duration duration = const Duration(days: 3)})`: Appends 3 days to current expiration.
+- **1-Day Ad-Free Pass Mechanics**:
+  - `grantAdFreePass({Duration duration = const Duration(days: 1)})`: Activates 1-day ad-free pass.
   - `isAdFree`: Returns boolean indicating if user currently has an active ad-free pass.
   - `remainingAdFreeText`: Human-readable remaining time (e.g., "2 days 18 hrs left").
   - `Stream<bool> onAdFreeChanged`: Emits state change to suppress banner ads application-wide.

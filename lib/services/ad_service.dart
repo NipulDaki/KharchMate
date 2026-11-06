@@ -6,7 +6,7 @@ import 'package:kharch_mate/environment/app_environment.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
 
 /// Centralized service handling Google AdMob Banners, Rewarded Video Ads,
-/// and tracking the 3-day Ad-Free pass reward state.
+/// and tracking the 1-day Ad-Free pass reward state.
 class AdService {
   static const String _adFreeUntilKey = 'ad_free_until_timestamp';
 
@@ -64,6 +64,16 @@ class AdService {
     // 1. Initialize Google Mobile Ads SDK safely
     try {
       await MobileAds.instance.initialize();
+
+      // Configure test device IDs so test ads are allowed on physical testing devices
+      await MobileAds.instance.updateRequestConfiguration(
+        RequestConfiguration(
+          testDeviceIds: [
+            'BC529CCD929EBB70806A5186108A7998', // Physical testing device
+          ],
+        ),
+      );
+
       // Preload App Open ad and Rewarded Video ad
       loadAppOpenAd();
       loadRewardedAd();
@@ -104,12 +114,12 @@ class AdService {
     }
   }
 
-  /// Grants the user an ad-free pass for a given duration (defaults to 3 days).
+  /// Grants the user an ad-free pass for a given duration (defaults to 1 day).
   /// If the user already has an active ad-free pass, it does NOT increase or
-  /// extend the days. Once the 3 days have completed and the pass expires,
-  /// calling this again will grant a new 3-day pass.
+  /// extend the days. Once the 1 day has completed and the pass expires,
+  /// calling this again will grant a new 1-day pass.
   Future<bool> grantAdFreePass({
-    Duration duration = const Duration(days: 3),
+    Duration duration = const Duration(days: 1),
   }) async {
     if (isAdFree) {
       // Pass is already active; do not increase the days.
@@ -147,17 +157,19 @@ class AdService {
   /// Whether a rewarded ad is currently in progress of loading.
   bool get isRewardedAdLoading => _isRewardedAdLoading;
 
-  /// Preloads a RewardedAd for the 3-day ad-free pass.
+  /// Preloads a RewardedAd for the 1-day ad-free pass.
   void loadRewardedAd({
+    String? overrideAdUnitId,
     VoidCallback? onLoaded,
     Function(LoadAdError)? onFailed,
   }) {
     if (_rewardedAd != null || _isRewardedAdLoading) return;
 
+    final adUnitId = overrideAdUnitId ?? appConfig.rewardedAdUnitId;
     _isRewardedAdLoading = true;
     try {
       RewardedAd.load(
-        adUnitId: appConfig.rewardedAdUnitId,
+        adUnitId: adUnitId,
         request: const AdRequest(),
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (ad) {
@@ -168,8 +180,16 @@ class AdService {
           onAdFailedToLoad: (error) {
             _rewardedAd = null;
             _isRewardedAdLoading = false;
+            debugPrint('Rewarded ad ($adUnitId) failed to load: ${error.message}');
+            if (adUnitId != appConfig.testRewardedAdUnitId) {
+              loadRewardedAd(
+                overrideAdUnitId: appConfig.testRewardedAdUnitId,
+                onLoaded: onLoaded,
+                onFailed: onFailed,
+              );
+              return;
+            }
             onFailed?.call(error);
-            debugPrint('Rewarded ad failed to load: ${error.message}');
           },
         ),
       );
@@ -180,7 +200,7 @@ class AdService {
   }
 
   /// Shows the loaded RewardedAd. When the user finishes watching, triggers
-  /// `onUserEarnedReward` and automatically activates the 3-day ad-free pass.
+  /// `onUserEarnedReward` and automatically activates the 1-day ad-free pass.
   void showRewardedAd({
     required VoidCallback onUserEarnedReward,
     VoidCallback? onDismissed,
@@ -209,7 +229,7 @@ class AdService {
 
     _rewardedAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) async {
-        await grantAdFreePass(duration: const Duration(days: 3));
+        await grantAdFreePass(duration: const Duration(days: 1));
         onUserEarnedReward();
       },
     );
@@ -221,11 +241,12 @@ class AdService {
 
   /// Creates and loads a BannerAd widget configured for the Dashboard.
   BannerAd createDashboardBanner({
+    String? adUnitId,
     required VoidCallback onAdLoaded,
     required Function(LoadAdError) onAdFailedToLoad,
   }) {
     return BannerAd(
-      adUnitId: appConfig.bannerAdUnitId,
+      adUnitId: adUnitId ?? appConfig.bannerAdUnitId,
       size: AdSize.banner, // 320x50 standard banner
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -286,7 +307,7 @@ class AdService {
     Function(LoadAdError)? onFailed,
   }) {
     _isAppOpenAdLoading = true;
-    _appOpenCompleter = Completer<bool>();
+    _appOpenCompleter ??= Completer<bool>();
 
     debugPrint('Loading AppOpenAd with unit ID: $adUnitId');
 
@@ -310,11 +331,10 @@ class AdService {
               'AppOpenAd ($adUnitId) failed to load: ${error.message} (code: ${error.code})',
             );
 
-            // In debug mode, if configured ad unit failed (e.g. brand new ad unit with No Fill code 3),
-            // fallback to the Google test AppOpenAd unit so developers can verify ads immediately.
-            if (kDebugMode && adUnitId != appConfig.testAppOpenAdUnitId) {
+            // Fallback to Google test AppOpenAd unit if configured ad unit failed (e.g. 403 or code 3)
+            if (adUnitId != appConfig.testAppOpenAdUnitId) {
               debugPrint(
-                'Debug mode: Retrying AppOpenAd with Google test unit: ${appConfig.testAppOpenAdUnitId}',
+                'Retrying AppOpenAd with Google test unit: ${appConfig.testAppOpenAdUnitId}',
               );
               _loadAppOpenAdInternal(
                 appConfig.testAppOpenAdUnitId,
@@ -382,16 +402,15 @@ class AdService {
   /// If the ad is already loaded, it displays immediately.
   /// If still loading, it waits up to [timeout] and displays upon load.
   Future<void> showAppOpenAdOnDashboard({
-    Duration timeout = const Duration(seconds: 4),
+    Duration timeout = const Duration(seconds: 6),
     VoidCallback? onDismissed,
   }) async {
     if (isAdFree || _hasShownAppOpenAdOnLaunch) {
       return;
     }
 
-    _hasShownAppOpenAdOnLaunch = true;
-
     if (isAppOpenAdAvailable) {
+      _hasShownAppOpenAdOnLaunch = true;
       showAppOpenAd(onComplete: onDismissed);
       return;
     }
@@ -404,6 +423,7 @@ class AdService {
       try {
         final success = await _appOpenCompleter!.future.timeout(timeout);
         if (success && isAppOpenAdAvailable) {
+          _hasShownAppOpenAdOnLaunch = true;
           showAppOpenAd(onComplete: onDismissed);
         }
       } catch (e) {

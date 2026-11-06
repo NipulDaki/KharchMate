@@ -43,6 +43,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       await _dbService.ensurePredefinedCategories();
       final categories = await _dbService.getAllCategories();
 
+      // Ensure latest added category appears on top (custom categories first, newest id/createdAt first)
+      categories.sort((a, b) {
+        if (a.isDefault != b.isDefault) {
+          return a.isDefault ? 1 : -1;
+        }
+        final aId = a.id ?? 0;
+        final bId = b.id ?? 0;
+        if (aId != bId) return bId.compareTo(aId);
+        return b.createdAt.compareTo(a.createdAt);
+      });
+
       if (mounted) {
         setState(() {
           _allCategories = categories;
@@ -170,14 +181,65 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           ),
         ),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: AppColors.primary,
+            ),
+            tooltip: 'Category Guide',
+            onPressed: () {
+              context.push(
+                AppRoutes.appTutorial.path,
+                extra: {
+                  'isFromSettings': true,
+                  'initialIndex': 1,
+                },
+              );
+            },
+          ),
+          const SizedBox(width: AppDimens.dimen4),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primary,
         elevation: 4,
         shape: const CircleBorder(),
         onPressed: () async {
-          final result = await context.push<bool>(AppRoutes.addCategory.path);
-          if (result == true) {
+          final result = await context.push<dynamic>(AppRoutes.addCategory.path);
+          if (result != null) {
+            if (!context.mounted) return;
+            final categoryName =
+                result is CategoryModel ? result.name : '';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  categoryName.isNotEmpty
+                      ? 'Category "$categoryName" added successfully.'
+                      : 'Category added successfully.',
+                ),
+                backgroundColor: AppColors.income,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+
+            if (result is CategoryModel) {
+              if (result.type == CategoryType.expense) {
+                _isExpenseExpanded = true;
+                if (_selectedTab == 'Income') {
+                  _selectedTab = 'All';
+                }
+              } else if (result.type == CategoryType.income) {
+                _isIncomeExpanded = true;
+                if (_selectedTab == 'Expense') {
+                  _selectedTab = 'All';
+                }
+              }
+              if (_searchQuery.isNotEmpty) {
+                _searchController.clear();
+                _searchQuery = '';
+              }
+            }
             _initAndLoadCategories();
           }
         },

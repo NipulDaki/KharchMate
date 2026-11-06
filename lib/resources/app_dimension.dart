@@ -5,6 +5,7 @@ class AppDimens {
   static const double defaultSemiboldTextSize = 16;
   static const double dimen0 = 0;
   static const double dimen1 = 1;
+  static const double dimen4 = 4;
   static const double dimen5 = 5;
   static const double dimen6 = 6;
   static const double dimen8 = 8;

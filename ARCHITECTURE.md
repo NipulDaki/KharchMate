@@ -12,7 +12,7 @@ KharchMate adopts a **Layered & Feature-Modular Architecture** engineered for te
 - **Multi-Environment Configuration**: Environment isolation across **Development**, **Staging**, and **Production** managed via `AppConfig` and separate entry points (`main_dev.dart`, `main_staging.dart`, `main_prod.dart`, `main.dart`).
 - **Dependency Injection**: Service locator pattern via `lib/di/service_locator.dart` (GetIt) providing singletons and lazy singletons for database services, secure storage, ad services, and configuration.
 - **Offline-First SQLite Persistence**: Fully local relational persistence via `sqflite`, featuring atomic schema migrations (`MigrationRunner`), modular Data Access Objects (DAOs), and reactive streams for instant UI synchronization.
-- **Monetization & Ad-Free Reward System**: Google AdMob integration (`google_mobile_ads`) with adaptive banners and a **3-Day Ad-Free Reward Pass** unlocked by watching rewarded video ads, persisted in encrypted storage (`flutter_secure_storage`).
+- **Monetization & Ad-Free Reward System**: Google AdMob integration (`google_mobile_ads`) with adaptive banners and a **1-Day Ad-Free Reward Pass** unlocked by watching rewarded video ads, persisted in encrypted storage (`flutter_secure_storage`).
 - **Visual Analytics & Reporting Engine**: Data visualization powered by `fl_chart`, featuring interactive spending pie charts, category breakdowns, and 6-month comparative income vs expense trends.
 - **Advanced Filtering & Search**: Multi-dimensional filtering engine allowing queries by transaction type, month-year, single date, category, and debounced text search with client-side sorting.
 - **Privacy & Google Play Compliance**: 100% offline data retention with built-in "Delete My Data" atomic database wipe, paired with hosted web compliance portals (`docs/`).
@@ -405,7 +405,7 @@ flowchart LR
 
 ---
 
-## 7. Monetization & 3-Day Ad-Free Reward Architecture (`lib/services/ad_service.dart`)
+## 7. Monetization & 1-Day Ad-Free Reward Architecture (`lib/services/ad_service.dart`)
 
 KharchMate balances unobtrusive monetization with a rewarded user-incentive system:
 
@@ -418,21 +418,21 @@ sequenceDiagram
     participant AdMob as Google Mobile Ads SDK
     participant Storage as SecureStorageService
 
-    User->>Settings: Taps "Watch Ad for 3-Day Ad-Free"
+    User->>Settings: Taps "Watch Ad for 1-Day Ad-Free"
     Settings->>AdService: showRewardedAd(onUserEarnedReward)
     AdService->>AdMob: RewardedAd.show()
     AdMob-->>User: Plays video ad
     User->>AdMob: Completes video ad
     AdMob-->>AdService: onUserEarnedReward callback
-    AdService->>Storage: Store new expiry timestamp (current + 3 days)
+    AdService->>Storage: Store new expiry timestamp (current + 1 day)
     AdService->>AdService: Emit onAdFreeChanged stream (true)
-    AdService-->>Settings: Update UI ("3 days remaining")
+    AdService-->>Settings: Update UI ("1 day remaining")
     Note over Settings,AdService: Future banner ad requests suppressed
 ```
 
 ### Core Features
 - **Adaptive Banner Ads**: Displayed via `DashboardBannerAdWidget` on the main dashboard screen.
-- **3-Day Ad-Free Pass**: Watching a rewarded video unlocks 3 full days of an ad-free experience.
+- **1-Day Ad-Free Pass**: Watching a rewarded video unlocks 1 full day of an ad-free experience.
 - **Cumulative Duration**: If the user already has an active ad-free pass and watches another video, 3 days are appended to their current expiration date.
 - **Encrypted Expiry Persistence**: The expiration timestamp is stored securely via `flutter_secure_storage` under `ad_free_until_timestamp`.
 - **Reactive UI**: `onAdFreeChanged` broadcast stream updates UI state immediately across the application.

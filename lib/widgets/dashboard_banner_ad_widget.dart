@@ -11,7 +11,7 @@ import 'package:kharch_mate/services/ad_service.dart';
 /// Dashboard Inline Banner Ad Widget.
 ///
 /// Placed above the Pie Chart. Automatically collapses to `SizedBox.shrink()`
-/// if the user has an active 3-day ad-free pass or if the ad fails to load.
+/// if the user has an active 1-day ad-free pass or if the ad fails to load.
 class DashboardBannerAdWidget extends StatefulWidget {
   const DashboardBannerAdWidget({super.key});
 
@@ -49,21 +49,29 @@ class _DashboardBannerAdWidgetState extends State<DashboardBannerAdWidget> {
     }
   }
 
-  void _loadBanner() {
-    if (_adService == null) return;
+  void _loadBanner({String? overrideAdUnitId}) {
+    if (_adService == null || _adService!.isAdFree) return;
+    final adUnitId = overrideAdUnitId ?? _adService!.appConfig.bannerAdUnitId;
+
     try {
+      _disposeBanner();
       _bannerAd = _adService!.createDashboardBanner(
+        adUnitId: adUnitId,
         onAdLoaded: () {
           if (mounted) {
             setState(() => _isBannerLoaded = true);
           }
         },
         onAdFailedToLoad: (error) {
+          debugPrint('Dashboard banner ad ($adUnitId) failed to load: ${error.message}');
           if (mounted) {
             setState(() {
               _isBannerLoaded = false;
               _bannerAd = null;
             });
+          }
+          if (adUnitId != _adService!.appConfig.testBannerAdUnitId) {
+            _loadBanner(overrideAdUnitId: _adService!.appConfig.testBannerAdUnitId);
           }
         },
       );
@@ -97,7 +105,7 @@ class _DashboardBannerAdWidgetState extends State<DashboardBannerAdWidget> {
           children: [
             Text('🎁 ', style: TextStyle(fontSize: 20)),
             Text(
-              'Remove Ads for 3 Days',
+              'Remove Ads for 1 Day',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -107,7 +115,7 @@ class _DashboardBannerAdWidgetState extends State<DashboardBannerAdWidget> {
           ],
         ),
         content: const Text(
-          'Watch a short sponsor video to enjoy a 100% ad-free experience across KharchMate for the next 72 hours.',
+          'Watch a short sponsor video to enjoy a 100% ad-free experience across KharchMate for the next 24 hours.',
           style: TextStyle(color: AppColors.textSecondary, height: 1.4),
         ),
         actions: [
@@ -162,7 +170,7 @@ class _DashboardBannerAdWidgetState extends State<DashboardBannerAdWidget> {
               content: Text(
                 wasAdFree
                     ? '🎉 Thank you for watching! Ad-free pass remains active.'
-                    : '🎉 3-Day Ad-Free Pass unlocked! Banner removed.',
+                    : '🎉 1-Day Ad-Free Pass unlocked! Banner removed.',
               ),
               backgroundColor: AppColors.income,
               duration: const Duration(seconds: 3),
@@ -201,7 +209,7 @@ class _DashboardBannerAdWidgetState extends State<DashboardBannerAdWidget> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header Row: Ad badge + "Remove Ads for 3 Days" shortcut
+          // Header Row: Ad badge + "Remove Ads for 1 Day" shortcut
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: Row(
@@ -233,7 +241,7 @@ class _DashboardBannerAdWidgetState extends State<DashboardBannerAdWidget> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Remove for 3 days 🎁',
+                          'Remove for 1 day 🎁',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,

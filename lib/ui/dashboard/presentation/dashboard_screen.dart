@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/helper/coach_mark_helper.dart';
 import 'package:kharch_mate/models/financial_summary.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
 import 'package:kharch_mate/models/user_profile.dart';
@@ -13,8 +14,10 @@ import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/ad_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
+import 'package:kharch_mate/services/secure_storage_service.dart';
 import 'package:kharch_mate/widgets/dashboard_banner_ad_widget.dart';
 import 'package:kharch_mate/widgets/month_year_picker_sheet.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -36,6 +39,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String get _currencySymbol => _userProfile?.currencySymbol ?? '₹';
 
+  // Coach Mark Targets
+  final GlobalKey _keyTotalBalance = GlobalKey();
+  final GlobalKey _keyMonthSelector = GlobalKey();
+  final GlobalKey _keyFabAdd = GlobalKey();
+  final GlobalKey _keyNavReports = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -56,10 +65,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     });
 
-    // Show App Open Ad when landing on Dashboard after app launch
+    // Show App Open Ad & Coach Mark tutorial on first install
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showAppOpenAdIfAvailable();
+      _initDashboardCoachMark();
     });
+  }
+
+  void _initDashboardCoachMark() {
+    CoachMarkHelper.showTutorial(
+      context: context,
+      storageKey: SecureStorageService.keyCoachMarkDashboard,
+      targets: [
+        CoachMarkHelper.createTarget(
+          identify: 'dashboard_balance',
+          keyTarget: _keyTotalBalance,
+          title: 'Total Balance Overview',
+          description:
+              'View your real-time net balance calculated automatically from all your income and expenses.',
+          stepIndex: 1,
+          totalSteps: 4,
+          icon: Icons.account_balance_wallet_rounded,
+          align: ContentAlign.bottom,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'dashboard_month',
+          keyTarget: _keyMonthSelector,
+          title: 'Month & Year Filter',
+          description:
+              'Tap here anytime to filter transactions, inspect previous months, or plan ahead.',
+          stepIndex: 2,
+          totalSteps: 4,
+          icon: Icons.calendar_today_rounded,
+          align: ContentAlign.bottom,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'dashboard_fab',
+          keyTarget: _keyFabAdd,
+          title: 'Quick Add Income & Expense',
+          description:
+              'Tap this center "+" button to record an expense or log income in under 5 seconds.',
+          stepIndex: 3,
+          totalSteps: 4,
+          icon: Icons.add_circle_rounded,
+          shape: ShapeLightFocus.Circle,
+          align: ContentAlign.top,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'dashboard_reports',
+          keyTarget: _keyNavReports,
+          title: 'Visual Reports & Analytics',
+          description:
+              'Analyze your monthly spending patterns, category charts, and income vs expense ratios.',
+          stepIndex: 4,
+          totalSteps: 4,
+          icon: Icons.bar_chart_rounded,
+          align: ContentAlign.top,
+        ),
+      ],
+    );
   }
 
   void _showAppOpenAdIfAvailable() {
@@ -71,6 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    CoachMarkHelper.dismissActiveTutorial();
     _transactionSubscription?.cancel();
     _userProfileSubscription?.cancel();
     super.dispose();
@@ -115,6 +180,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: AppColors.background,
       bottomNavigationBar: _buildBottomNav(context),
       floatingActionButton: FloatingActionButton(
+        key: _keyFabAdd,
         backgroundColor: AppColors.primary,
         shape: const CircleBorder(),
         elevation: 4,
@@ -242,6 +308,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final monthLabel = DateFormat('MMMM yyyy').format(_selectedDate);
 
     return InkWell(
+      key: _keyMonthSelector,
       onTap: () async {
         final result = await showMonthYearPickerSheet(
           context: context,
@@ -291,6 +358,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTotalBalanceCard(ThemeData theme) {
     return Container(
+      key: _keyTotalBalance,
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimens.dimen20),
       decoration: BoxDecoration(
@@ -795,12 +863,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
               borderRadius: BorderRadius.circular(AppDimens.dimen16),
               border: Border.all(color: AppColors.borderColor),
             ),
-            child: Text(
-              "No transactions yet. Tap '+' below to add your first expense or income!",
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.textHint,
-              ),
+            child: Column(
+              children: [
+                Text(
+                  "No transactions yet. Tap '+' below to add your first expense or income!",
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textHint,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    context.push(
+                      AppRoutes.appTutorial.path,
+                      extra: true,
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.menu_book_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                  label: const Text(
+                    'View App Tutorial',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primaryLight),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+              ],
             ),
           )
         else
@@ -903,9 +1007,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               },
             ),
             const SizedBox(width: 48), // Spacer for FAB
-            _buildNavItem(Icons.bar_chart_rounded, "Reports", false, () {
-              context.go(AppRoutes.report.path);
-            }),
+            _buildNavItem(
+              Icons.bar_chart_rounded,
+              "Reports",
+              false,
+              () {
+                context.go(AppRoutes.report.path);
+              },
+              key: _keyNavReports,
+            ),
             _buildNavItem(Icons.settings_rounded, "Settings", false, () {
               context.go(AppRoutes.settings.path);
             }),
@@ -919,13 +1029,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     IconData icon,
     String label,
     bool isSelected,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    Key? key,
+  }) {
     final color = isSelected
         ? AppColors.bottomNavSelected
         : AppColors.bottomNavUnselected;
 
     return InkWell(
+      key: key,
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,

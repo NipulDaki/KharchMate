@@ -6,12 +6,15 @@ import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/helper/coach_mark_helper.dart';
 import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/ad_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
+import 'package:kharch_mate/services/secure_storage_service.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -57,10 +60,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Preload rewarded ad so it's ready when user wants to watch
       _adService!.loadRewardedAd();
     }
+
+    // Show coach mark tutorial on first install/visit
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initSettingsCoachMarks();
+    });
+  }
+
+  // Coach Mark Targets
+  final GlobalKey _keyAdFreeCard = GlobalKey();
+  final GlobalKey _keyCategoriesTile = GlobalKey();
+  final GlobalKey _keyCurrencyTile = GlobalKey();
+
+  void _initSettingsCoachMarks({bool force = false}) {
+    CoachMarkHelper.showTutorial(
+      context: context,
+      storageKey: SecureStorageService.keyCoachMarkSettingsAdFree,
+      forceShow: force,
+      targets: [
+        CoachMarkHelper.createTarget(
+          identify: 'settings_ad_free',
+          keyTarget: _keyAdFreeCard,
+          title: '1-Day Ad-Free Pass (Remove Ads)',
+          description:
+              'Watch a quick rewarded ad anytime to enjoy KharchMate completely ad-free for 1 whole day! You can renew it whenever it expires.',
+          stepIndex: 1,
+          totalSteps: 3,
+          icon: Icons.workspace_premium_rounded,
+          align: ContentAlign.bottom,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'settings_currency',
+          keyTarget: _keyCurrencyTile,
+          title: 'Select Currency',
+          description:
+              'Choose your preferred currency symbol (₹, \$, €, £, and more) to match your local format.',
+          stepIndex: 2,
+          totalSteps: 3,
+          icon: Icons.currency_exchange_rounded,
+          align: ContentAlign.bottom,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'settings_categories',
+          keyTarget: _keyCategoriesTile,
+          title: 'Manage Categories',
+          description:
+              'Manage predefined categories and create custom ones with unique icons and vibrant colors.',
+          stepIndex: 3,
+          totalSteps: 3,
+          icon: Icons.grid_view_rounded,
+          align: ContentAlign.bottom,
+        ),
+      ],
+    );
   }
 
   @override
   void dispose() {
+    CoachMarkHelper.dismissActiveTutorial();
     _userProfileSubscription?.cancel();
     _adFreeSubscription?.cancel();
     super.dispose();
@@ -417,6 +474,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     // 1. Currency
                     _buildSettingsTile(
+                      key: _keyCurrencyTile,
                       icon: Icons.currency_exchange_rounded,
                       title: 'Currency',
                       subtitle: currencyDisplay,
@@ -430,6 +488,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     // 2. Categories -> Opens Categories Page!
                     _buildSettingsTile(
+                      key: _keyCategoriesTile,
                       icon: Icons.grid_view_rounded,
                       title: 'Categories',
                       onTap: () {
@@ -515,6 +574,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: 'Terms of Use',
                       onTap: () {
                         context.push(AppRoutes.termsOfUse.path);
+                      },
+                    ),
+                    const Divider(
+                      height: 1,
+                      indent: 64,
+                      color: AppColors.dividerColor,
+                    ),
+
+                    // App Tutorial & How-To Guide
+                    _buildSettingsTile(
+                      icon: Icons.menu_book_rounded,
+                      iconColor: const Color(0xFF1E88E5),
+                      iconBackgroundColor: const Color(0xFFE3F2FD),
+                      title: 'App Tutorial & Guide',
+                      subtitle: 'Learn how to add categories, income & expenses',
+                      onTap: () {
+                        context.push(
+                          AppRoutes.appTutorial.path,
+                          extra: true,
+                        );
+                      },
+                    ),
+                    const Divider(
+                      height: 1,
+                      indent: 64,
+                      color: AppColors.dividerColor,
+                    ),
+
+                    // Replay Interactive Tours
+                    _buildSettingsTile(
+                      icon: Icons.replay_circle_filled_rounded,
+                      iconColor: const Color(0xFF00897B),
+                      iconBackgroundColor: const Color(0xFFE0F2F1),
+                      title: 'Replay Screen Tours',
+                      subtitle: 'Reset interactive coach marks for all pages',
+                      onTap: () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        final storage = serviceLocator<SecureStorageService>();
+                        await storage.resetAllCoachMarks();
+                        if (!mounted) return;
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Interactive tours reset! Showing Settings tour...',
+                            ),
+                            backgroundColor: AppColors.primary,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                        _initSettingsCoachMarks(force: true);
                       },
                     ),
                     const Divider(
@@ -717,6 +826,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final remainingText = _adService?.remainingAdFreeText ?? '';
 
     return Container(
+      key: _keyAdFreeCard,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
@@ -764,7 +874,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             child: Text(
                               isAdFree
                                   ? 'Ad-Free Pass Active'
-                                  : 'Go Ad-Free for 3 Days',
+                                  : 'Go Ad-Free for 1 Day',
                               style: const TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
@@ -848,7 +958,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
           content: Text(
-            'You currently have an active ad-free pass ($remainingText).\n\nBanner ads are hidden. You can still watch a sponsor video, but it will not increase your current pass validity. Once your 3-day pass completes, watching a video will grant 3 days again.',
+            'You currently have an active ad-free pass ($remainingText).\n\nBanner ads are hidden. You can still watch a sponsor video, but it will not increase your current pass validity. Once your 1-day pass completes, watching a video will grant 1 day again.',
             style: const TextStyle(
               color: AppColors.textSecondary,
               height: 1.45,
@@ -894,7 +1004,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text('🎁 ', style: TextStyle(fontSize: 22)),
             Expanded(
               child: Text(
-                'Unlock 3-Day Ad-Free Pass',
+                'Unlock 1-Day Ad-Free Pass',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -905,7 +1015,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
         content: const Text(
-          'Watch a short sponsor video to completely remove all banner ads across KharchMate for the next 3 days (72 hours).',
+          'Watch a short sponsor video to completely remove all banner ads across KharchMate for the next 1 day (24 hours).',
           style: TextStyle(
             color: AppColors.textSecondary,
             height: 1.45,
@@ -967,7 +1077,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               content: Text(
                 wasAdFree
                     ? '🎉 Thank you for watching! Ad-free pass remains active (${_adService!.remainingAdFreeText}).'
-                    : '🎉 Congratulations! 3 Days of Ad-Free experience activated!',
+                    : '🎉 Congratulations! 1 Day of Ad-Free experience activated!',
               ),
               backgroundColor: AppColors.income,
               duration: const Duration(seconds: 3),
@@ -1143,6 +1253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSettingsTile({
+    Key? key,
     required IconData icon,
     required String title,
     String? subtitle,
@@ -1154,6 +1265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     VoidCallback? onTap,
   }) {
     return InkWell(
+      key: key,
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Padding(

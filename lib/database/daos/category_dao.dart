@@ -10,11 +10,12 @@ class CategoryDao {
 
   Database get _db => appDatabase.db;
 
-  /// Retrieves all categories, ordered by name.
+  /// Retrieves all categories, ordered by latest added first.
   Future<List<CategoryModel>> getAllCategories() async {
     final results = await _db.query(
       DatabaseConstants.tableCategories,
-      orderBy: '${DatabaseConstants.colCategoryName} ASC',
+      orderBy:
+          '${DatabaseConstants.colCategoryIsDefault} ASC, ${DatabaseConstants.colCategoryId} DESC',
     );
     return results.map(CategoryModel.fromMap).toList();
   }
@@ -26,7 +27,8 @@ class CategoryDao {
       where:
           '${DatabaseConstants.colCategoryType} = ? OR ${DatabaseConstants.colCategoryType} = ?',
       whereArgs: [type.toDbString(), 'both'],
-      orderBy: '${DatabaseConstants.colCategoryName} ASC',
+      orderBy:
+          '${DatabaseConstants.colCategoryIsDefault} ASC, ${DatabaseConstants.colCategoryId} DESC',
     );
     return results.map(CategoryModel.fromMap).toList();
   }

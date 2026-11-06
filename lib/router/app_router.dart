@@ -4,6 +4,7 @@ import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/ui/categories/presentation/add_category_screen.dart';
 import 'package:kharch_mate/ui/categories/presentation/categories_screen.dart';
 import 'package:kharch_mate/ui/dashboard/presentation/dashboard_screen.dart';
+import 'package:kharch_mate/ui/onboarding/presentation/app_tutorial_screen.dart';
 import 'package:kharch_mate/ui/onboarding/presentation/user_name_screen.dart';
 import 'package:kharch_mate/ui/onboarding/presentation/welcome_screen.dart';
 import 'package:kharch_mate/ui/settings/presentation/help_support_screen.dart';
@@ -12,6 +13,7 @@ import 'package:kharch_mate/ui/settings/presentation/settings_screen.dart';
 import 'package:kharch_mate/ui/settings/presentation/terms_screen.dart';
 import 'package:kharch_mate/ui/settings/presentation/user_profile_screen.dart';
 import 'package:kharch_mate/ui/splash/presentation/splash_screen.dart';
+import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
 import 'package:kharch_mate/ui/transaction/presentation/add_transaction_screen.dart';
 import 'package:kharch_mate/ui/transaction/presentation/transaction_details_screen.dart';
@@ -45,6 +47,25 @@ class AppRouter {
         builder: (context, state) => const UserNameScreen(),
       ),
       GoRoute(
+        name: AppRoutes.appTutorial.name,
+        path: AppRoutes.appTutorial.path,
+        builder: (context, state) {
+          bool isFromSettings = false;
+          int initialIndex = 0;
+          if (state.extra is bool) {
+            isFromSettings = state.extra as bool;
+          } else if (state.extra is Map<String, dynamic>) {
+            final map = state.extra as Map<String, dynamic>;
+            isFromSettings = (map['isFromSettings'] as bool?) ?? false;
+            initialIndex = (map['initialIndex'] as int?) ?? 0;
+          }
+          return AppTutorialScreen(
+            isFromSettings: isFromSettings,
+            initialIndex: initialIndex,
+          );
+        },
+      ),
+      GoRoute(
         name: AppRoutes.dashboard.name,
         path: AppRoutes.dashboard.path,
         builder: (context, state) => const DashboardScreen(),
@@ -57,7 +78,13 @@ class AppRouter {
       GoRoute(
         name: AppRoutes.addCategory.name,
         path: AppRoutes.addCategory.path,
-        builder: (context, state) => const AddCategoryScreen(),
+        builder: (context, state) {
+          CategoryType? initialType;
+          if (state.extra is CategoryType) {
+            initialType = state.extra as CategoryType;
+          }
+          return AddCategoryScreen(initialType: initialType);
+        },
       ),
       GoRoute(
         name: AppRoutes.settings.name,

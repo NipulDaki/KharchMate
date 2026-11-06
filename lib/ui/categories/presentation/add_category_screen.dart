@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/helper/coach_mark_helper.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/services/database_service.dart';
+import 'package:kharch_mate/services/secure_storage_service.dart';
 import 'package:kharch_mate/widgets/app_text_button.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class AddCategoryScreen extends StatefulWidget {
-  const AddCategoryScreen({super.key});
+  final CategoryType? initialType;
+
+  const AddCategoryScreen({super.key, this.initialType});
 
   @override
   State<AddCategoryScreen> createState() => _AddCategoryScreenState();
@@ -60,11 +65,90 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialType != null) {
+      _selectedType = widget.initialType!;
+    }
     _dbService = serviceLocator<DatabaseService>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initCategoryCoachMarks();
+    });
+  }
+
+  // Coach Mark Targets
+  final GlobalKey _keyNameInput = GlobalKey();
+  final GlobalKey _keyTypeSelector = GlobalKey();
+  final GlobalKey _keyIconGrid = GlobalKey();
+  final GlobalKey _keyColorPalette = GlobalKey();
+  final GlobalKey _keySaveButton = GlobalKey();
+
+  void _initCategoryCoachMarks({bool force = false}) {
+    CoachMarkHelper.showTutorial(
+      context: context,
+      storageKey: SecureStorageService.keyCoachMarkAddCategory,
+      forceShow: force,
+      targets: [
+        CoachMarkHelper.createTarget(
+          identify: 'cat_name',
+          keyTarget: _keyNameInput,
+          title: 'Category Name',
+          description:
+              'Give your category a clear name (e.g., Groceries, Gym, Netflix, Pet Care, Freelance).',
+          stepIndex: 1,
+          totalSteps: 5,
+          icon: Icons.edit_note_rounded,
+          align: ContentAlign.bottom,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'cat_type',
+          keyTarget: _keyTypeSelector,
+          title: 'Expense or Income',
+          description:
+              'Specify whether this category should be used for tracking daily expenses or logging income.',
+          stepIndex: 2,
+          totalSteps: 5,
+          icon: Icons.swap_horiz_rounded,
+          align: ContentAlign.bottom,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'cat_icon',
+          keyTarget: _keyIconGrid,
+          title: 'Pick an Icon',
+          description:
+              'Choose an icon from the library to quickly identify this category on transaction lists.',
+          stepIndex: 3,
+          totalSteps: 5,
+          icon: Icons.grid_view_rounded,
+          align: ContentAlign.bottom,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'cat_color',
+          keyTarget: _keyColorPalette,
+          title: 'Select Category Color',
+          description:
+              'Assign a unique color so you can spot this category easily in reports and pie charts.',
+          stepIndex: 4,
+          totalSteps: 5,
+          icon: Icons.palette_rounded,
+          align: ContentAlign.top,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'cat_save',
+          keyTarget: _keySaveButton,
+          title: 'Save Category',
+          description:
+              'Tap Save to create this category. It will instantly appear when adding transactions.',
+          stepIndex: 5,
+          totalSteps: 5,
+          icon: Icons.check_circle_rounded,
+          align: ContentAlign.top,
+        ),
+      ],
+    );
   }
 
   @override
   void dispose() {
+    CoachMarkHelper.dismissActiveTutorial();
     _nameController.dispose();
     super.dispose();
   }
@@ -96,6 +180,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
 
     setState(() => _isSaving = true);
 
+    CategoryModel? insertedCategory;
     try {
       final newCategory = CategoryModel(
         name: categoryName,
@@ -106,14 +191,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
         createdAt: DateTime.now(),
       );
 
-      await _dbService.insertCategory(newCategory);
-
-      if (mounted) {
-        setState(() => _isSaving = false);
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop(true);
-        }
-      }
+      insertedCategory = await _dbService.insertCategory(newCategory);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -123,6 +201,14 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
           ),
         );
         setState(() => _isSaving = false);
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() => _isSaving = false);
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(insertedCategory);
       }
     }
   }
@@ -153,6 +239,19 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
           ),
         ),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: AppColors.primary,
+            ),
+            tooltip: 'Interactive Tour',
+            onPressed: () {
+              _initCategoryCoachMarks(force: true);
+            },
+          ),
+          const SizedBox(width: AppDimens.dimen4),
+        ],
       ),
       body: Stack(
         children: [
@@ -203,6 +302,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                     ),
                     const SizedBox(height: AppDimens.dimen8),
                     Container(
+                      key: _keyNameInput,
                       decoration: BoxDecoration(
                         color: AppColors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -252,6 +352,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                     ),
                     const SizedBox(height: AppDimens.dimen8),
                     Container(
+                      key: _keyTypeSelector,
                       height: 46,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF0F4F8),
@@ -331,74 +432,78 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                       ),
                     ),
                     const SizedBox(height: AppDimens.dimen12),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _iconOptions.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 5,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 1.0,
-                      ),
-                      itemBuilder: (context, index) {
-                        final item = _iconOptions[index];
-                        final key = item['key'] as String;
-                        final icon = item['icon'] as IconData;
-                        final isSelected = _selectedIconKey == key;
+                    Container(
+                      key: _keyIconGrid,
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _iconOptions.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 5,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 1.0,
+                        ),
+                        itemBuilder: (context, index) {
+                          final item = _iconOptions[index];
+                          final key = item['key'] as String;
+                          final icon = item['icon'] as IconData;
+                          final isSelected = _selectedIconKey == key;
 
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() => _selectedIconKey = key);
-                          },
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: double.infinity,
-                                height: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AppColors.white
-                                      : const Color(0xFFF7F9FB),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() => _selectedIconKey = key);
+                            },
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? AppColors.white
+                                        : const Color(0xFFF7F9FB),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppColors.primary
+                                          : AppColors.borderColor,
+                                      width: isSelected ? 2 : 1,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    icon,
                                     color: isSelected
                                         ? AppColors.primary
-                                        : AppColors.borderColor,
-                                    width: isSelected ? 2 : 1,
+                                        : AppColors.textSecondary,
+                                    size: 22,
                                   ),
                                 ),
-                                child: Icon(
-                                  icon,
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : AppColors.textSecondary,
-                                  size: 22,
-                                ),
-                              ),
-                              if (isSelected)
-                                Positioned(
-                                  top: -4,
-                                  right: -4,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(2),
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.primary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.check,
-                                      color: AppColors.white,
-                                      size: 10,
+                                if (isSelected)
+                                  Positioned(
+                                    top: -4,
+                                    right: -4,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.check,
+                                        color: AppColors.white,
+                                        size: 10,
+                                      ),
                                     ),
                                   ),
-                                ),
-                            ],
-                          ),
-                        );
-                      },
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
 
                     const SizedBox(height: AppDimens.dimen24),
@@ -413,6 +518,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                     ),
                     const SizedBox(height: AppDimens.dimen12),
                     Row(
+                      key: _keyColorPalette,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: _colorOptions.map((hex) {
                         final isSelected = _selectedColorHex == hex;
@@ -447,6 +553,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
 
                     // 6. Save Button
                     SizedBox(
+                      key: _keySaveButton,
                       width: double.infinity,
                       height: 52,
                       child: AppTextButton(

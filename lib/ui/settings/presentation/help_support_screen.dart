@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
+import 'package:kharch_mate/router/app_routes.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
@@ -94,6 +96,94 @@ class HelpSupportScreen extends StatelessWidget {
                               fontSize: 13,
                               color: AppColors.textSecondary,
                               height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: AppDimens.dimen16),
+
+              // Interactive App Tutorial Banner Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppDimens.dimen16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.primaryLight.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.menu_book_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: AppDimens.dimen14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Visual App Tutorial',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          const Text(
+                            'Step-by-step interactive guide for categories, income, expenses & budgets.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          InkWell(
+                            onTap: () {
+                              context.push(
+                                AppRoutes.appTutorial.path,
+                                extra: true,
+                              );
+                            },
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Launch Visual Guide',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primaryDark,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 14,
+                                  color: AppColors.primaryDark,
+                                ),
+                              ],
                             ),
                           ),
                         ],

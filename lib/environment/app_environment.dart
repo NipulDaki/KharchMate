@@ -196,4 +196,24 @@ class AppConfig {
     }
     return testAndroidAppOpenId;
   }
+
+  /// Resolves Test Banner Ad Unit ID based on platform.
+  String get testBannerAdUnitId {
+    if (Platform.isAndroid) {
+      return testAndroidBannerId;
+    } else if (Platform.isIOS) {
+      return testIosBannerId;
+    }
+    return testAndroidBannerId;
+  }
+
+  /// Resolves Test Rewarded Ad Unit ID based on platform.
+  String get testRewardedAdUnitId {
+    if (Platform.isAndroid) {
+      return testAndroidRewardedId;
+    } else if (Platform.isIOS) {
+      return testIosRewardedId;
+    }
+    return testAndroidRewardedId;
+  }
 }

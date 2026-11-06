@@ -5,6 +5,7 @@ enum AppRoutes {
   splash,
   welcome,
   userName,
+  appTutorial,
   dashboard,
   transaction,
   addTransaction,
@@ -31,6 +32,8 @@ extension AppRouteExtension on AppRoutes {
         return '/welcome';
       case AppRoutes.userName:
         return '/user-name';
+      case AppRoutes.appTutorial:
+        return '/app-tutorial';
       case AppRoutes.dashboard:
         return '/dashboard';
       case AppRoutes.transaction:
@@ -70,6 +73,8 @@ extension AppRouteExtension on AppRoutes {
         return 'Welcome';
       case AppRoutes.userName:
         return 'UserName';
+      case AppRoutes.appTutorial:
+        return 'AppTutorial';
       case AppRoutes.dashboard:
         return 'Dashboard';
       case AppRoutes.transaction:

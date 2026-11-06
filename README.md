@@ -50,9 +50,9 @@ KharchMate is a modern, simple, and intuitive personal finance and expense track
   - Create custom categories with custom icons and color pickers.
   - Intelligent icon resolver (`CategoryModel.iconDataFrom`) matching 50+ keywords to Material icons.
 
-- 🛡️ **Monetization & 3-Day Ad-Free Reward Pass**:
+- 🛡️ **Monetization & 1-Day Ad-Free Reward Pass**:
   - Integrated Google AdMob (`google_mobile_ads`) with adaptive banner ads on the Dashboard.
-  - **3-Day Ad-Free Reward**: Watch a rewarded video ad to unlock a 3-day ad-free pass, stored securely in encrypted storage.
+  - **1-Day Ad-Free Reward**: Watch a rewarded video ad to unlock a 1-day ad-free pass, stored securely in encrypted storage.
   - Extendable duration: Watching additional rewarded ads cumulatively extends the ad-free period.
   - Automatic ad suppression across the app while the pass is active.
 

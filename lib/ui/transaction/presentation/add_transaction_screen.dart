@@ -1,16 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/enum/payment_mode.dart';
+import 'package:kharch_mate/helper/coach_mark_helper.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
 import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
+import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/database_service.dart';
+import 'package:kharch_mate/services/secure_storage_service.dart';
 import 'package:kharch_mate/widgets/app_text_button.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final TransactionItem? initialTransaction;
@@ -25,6 +30,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
+  final FocusNode _amountFocusNode = FocusNode();
+  final FocusNode _noteFocusNode = FocusNode();
 
   late final DatabaseService _dbService;
 
@@ -43,6 +50,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String? _categoryError;
   String? _paymentMethodError;
 
+  // Coach Mark Targets
+  final GlobalKey _keyTypeToggle = GlobalKey();
+  final GlobalKey _keyAmount = GlobalKey();
+  final GlobalKey _keyCategory = GlobalKey();
+  final GlobalKey _keyPaymentMode = GlobalKey();
+  final GlobalKey _keySaveButton = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -60,19 +74,90 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
     }
     _loadInitialData();
-    _userProfileSubscription = _dbService.onUserProfileChanged.listen((profile) {
+    _userProfileSubscription = _dbService.onUserProfileChanged.listen((
+      profile,
+    ) {
       if (mounted && profile.currencySymbol.isNotEmpty) {
         setState(() {
           _currencySymbol = profile.currencySymbol;
         });
       }
     });
+
+    if (!isEditing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initTransactionCoachMarks();
+      });
+    }
+  }
+
+  void _initTransactionCoachMarks({bool force = false}) {
+    CoachMarkHelper.showTutorial(
+      context: context,
+      storageKey: SecureStorageService.keyCoachMarkAddTransaction,
+      forceShow: force,
+      targets: [
+        CoachMarkHelper.createTarget(
+          identify: 'tx_type_toggle',
+          keyTarget: _keyTypeToggle,
+          title: 'Expense or Income Switcher',
+          description: 'Select Expense (red) to record daily spending, or switch to Income (green) to log salary, gifts, or investments.',
+          stepIndex: 1,
+          totalSteps: 5,
+          icon: Icons.swap_horiz_rounded,
+          align: ContentAlign.bottom,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'tx_amount',
+          keyTarget: _keyAmount,
+          title: 'Enter Transaction Amount',
+          description: 'Type how much you spent or received. Your configured currency symbol updates automatically.',
+          stepIndex: 2,
+          totalSteps: 5,
+          icon: Icons.currency_rupee_rounded,
+          align: ContentAlign.bottom,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'tx_category',
+          keyTarget: _keyCategory,
+          title: 'Choose Category',
+          description: 'Pick an expense or income category. You can also scroll to the end and tap "+ Add" to create a custom category.',
+          stepIndex: 3,
+          totalSteps: 5,
+          icon: Icons.category_rounded,
+          align: ContentAlign.bottom,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'tx_payment_mode',
+          keyTarget: _keyPaymentMode,
+          title: 'Payment Method',
+          description: 'Select how money was transferred: Cash, UPI (GPay/PhonePe), Bank Transfer, or Debit/Credit Card.',
+          stepIndex: 4,
+          totalSteps: 5,
+          icon: Icons.payment_rounded,
+          align: ContentAlign.top,
+        ),
+        CoachMarkHelper.createTarget(
+          identify: 'tx_save',
+          keyTarget: _keySaveButton,
+          title: 'Save Transaction',
+          description: 'Tap Save to record this entry and immediately update your wallet balance, monthly budget, and reports.',
+          stepIndex: 5,
+          totalSteps: 5,
+          icon: Icons.check_circle_rounded,
+          align: ContentAlign.top,
+        ),
+      ],
+    );
   }
 
   @override
   void dispose() {
+    CoachMarkHelper.dismissActiveTutorial();
     _amountController.dispose();
     _noteController.dispose();
+    _amountFocusNode.dispose();
+    _noteFocusNode.dispose();
     _userProfileSubscription?.cancel();
     super.dispose();
   }
@@ -145,8 +230,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
+  void _unfocusInputs() {
+    FocusScope.of(context).unfocus();
+    _amountFocusNode.unfocus();
+    _noteFocusNode.unfocus();
+  }
+
   void _onTypeChanged(TransactionType newType) {
     if (_selectedType == newType) return;
+    _unfocusInputs();
     setState(() {
       _selectedType = newType;
       _selectedCategory = null;
@@ -156,6 +248,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _selectDate() async {
+    _unfocusInputs();
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -175,14 +268,64 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       },
     );
 
+    if (mounted) {
+      _unfocusInputs();
+    }
+
     if (picked != null && picked != _selectedDate) {
       setState(() => _selectedDate = picked);
     }
   }
 
-  void _showCategoryDropdown() {
-    showModalBottomSheet(
+  Future<void> _openAddCategory() async {
+    _unfocusInputs();
+    final targetCategoryType = _selectedType.isIncome
+        ? CategoryType.income
+        : CategoryType.expense;
+
+    final result = await context.push<dynamic>(
+      AppRoutes.addCategory.path,
+      extra: targetCategoryType,
+    );
+
+    if (mounted) {
+      _unfocusInputs();
+    }
+
+    if (result != null) {
+      await _loadCategoriesForType(_selectedType);
+      if (result is CategoryModel) {
+        setState(() {
+          _selectedCategory = result;
+          _categoryError = null;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Category "${result.name}" added successfully.'),
+              backgroundColor: AppColors.income,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else if (_categories.isNotEmpty) {
+        setState(() {
+          _selectedCategory = _categories.first;
+          _categoryError = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _showCategoryDropdown() async {
+    _unfocusInputs();
+
+    final isIncome = _selectedType.isIncome;
+    final typeLabel = isIncome ? "Income" : "Expense";
+
+    await showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: AppColors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -206,22 +349,153 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'Select ${_selectedType == TransactionType.expense ? "Expense" : "Income"} Category',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+
+                // Title + Add Category Button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Select $typeLabel Category',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _openAddCategory();
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBackground,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.primaryLight,
+                            width: 1,
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.add_circle_outline_rounded,
+                              size: 15,
+                              color: AppColors.primaryDark,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Add New',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 14),
+
+                // Prominent Add Category Action Banner
+                InkWell(
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _openAddCategory();
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isIncome
+                          ? AppColors.incomeLight
+                          : AppColors.primaryBackground,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isIncome
+                            ? AppColors.income.withValues(alpha: 0.35)
+                            : AppColors.primary.withValues(alpha: 0.35),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: isIncome
+                                ? AppColors.income
+                                : AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.add_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '+ Add New $typeLabel Category',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: isIncome
+                                      ? AppColors.income
+                                      : AppColors.primaryDark,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Customize name, icon, and colors for fast tracking',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: isIncome
+                              ? AppColors.income
+                              : AppColors.primaryDark,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
+
+                const SizedBox(height: 14),
+
                 if (_categories.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Center(
                       child: Text(
-                        'No categories found.',
-                        style: TextStyle(color: AppColors.textHint),
+                        'No categories found. Tap "+ Add New $typeLabel Category" above!',
+                        style: const TextStyle(color: AppColors.textHint),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   )
@@ -239,6 +513,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         final isSelected = _selectedCategory?.id == cat.id;
 
                         return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
                           leading: Container(
                             width: 38,
                             height: 38,
@@ -284,12 +562,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
       },
     );
+
+    if (mounted) {
+      _unfocusInputs();
+    }
   }
 
-  void _showPaymentModeDropdown() {
+  Future<void> _showPaymentModeDropdown() async {
+    _unfocusInputs();
     final modes = PaymentMode.values;
 
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.white,
       shape: const RoundedRectangleBorder(
@@ -330,10 +613,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: modes.length,
-                  separatorBuilder: (_, _) => const Divider(
-                    height: 1,
-                    color: AppColors.dividerColor,
-                  ),
+                  separatorBuilder: (_, _) =>
+                      const Divider(height: 1, color: AppColors.dividerColor),
                   itemBuilder: (context, index) {
                     final mode = modes[index];
                     final isSelected = _selectedPaymentMode == mode;
@@ -355,8 +636,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       title: Text(
                         mode.displayName,
                         style: TextStyle(
-                          fontWeight:
-                              isSelected ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                           color: AppColors.textPrimary,
                         ),
                       ),
@@ -382,14 +664,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
       },
     );
+
+    if (mounted) {
+      _unfocusInputs();
+    }
   }
 
   Future<void> _saveTransaction() async {
     final isFormValid = _formKey.currentState?.validate() ?? false;
 
     setState(() {
-      _categoryError =
-          _selectedCategory == null ? 'Please select a category' : null;
+      _categoryError = _selectedCategory == null
+          ? 'Please select a category'
+          : null;
       _paymentMethodError = _selectedPaymentMode == null
           ? 'Please select a payment method'
           : null;
@@ -497,105 +784,125 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           ),
         ),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: AppColors.primary,
+            ),
+            tooltip: 'Interactive Tour',
+            onPressed: () {
+              _initTransactionCoachMarks(force: true);
+            },
+          ),
+          const SizedBox(width: AppDimens.dimen4),
+        ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimens.dimen20,
-            vertical: AppDimens.dimen12,
-          ),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Expense / Income Segmented Toggle
-                _buildTypeSegmentedToggle(),
+        child: GestureDetector(
+          onTap: _unfocusInputs,
+          behavior: HitTestBehavior.opaque,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimens.dimen20,
+              vertical: AppDimens.dimen12,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Expense / Income Segmented Toggle
+                  _buildTypeSegmentedToggle(),
 
-                const SizedBox(height: AppDimens.dimen20),
+                  const SizedBox(height: AppDimens.dimen20),
 
-                // 2. Amount Field (Numpad Keyboard)
-                _buildLabel('Amount'),
-                const SizedBox(height: AppDimens.dimen8),
-                _buildAmountInput(),
+                  // 2. Amount Field (Numpad Keyboard)
+                  _buildLabel('Amount'),
+                  const SizedBox(height: AppDimens.dimen8),
+                  _buildAmountInput(),
 
-                const SizedBox(height: AppDimens.dimen20),
+                  const SizedBox(height: AppDimens.dimen20),
 
-                // 3. Category Selector Dropdown
-                _buildLabel('Category'),
-                const SizedBox(height: AppDimens.dimen8),
-                _buildCategorySelector(),
-                if (_categoryError != null) ...[
-                  const SizedBox(height: 6),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Text(
-                      _categoryError!,
-                      style: const TextStyle(
-                        color: AppColors.expense,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                  // 3. Category Selector Dropdown
+                  _buildLabel('Category'),
+
+                  const SizedBox(height: AppDimens.dimen8),
+                  _buildCategorySelector(),
+                  if (_categoryError != null) ...[
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Text(
+                        _categoryError!,
+                        style: const TextStyle(
+                          color: AppColors.expense,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
 
-                const SizedBox(height: AppDimens.dimen20),
+                  const SizedBox(height: AppDimens.dimen20),
 
-                // 4. Date Picker Field
-                _buildLabel('Date'),
-                const SizedBox(height: AppDimens.dimen8),
-                _buildDatePicker(dateFormatted),
+                  // 4. Date Picker Field
+                  _buildLabel('Date'),
+                  const SizedBox(height: AppDimens.dimen8),
+                  _buildDatePicker(dateFormatted),
 
-                const SizedBox(height: AppDimens.dimen20),
+                  const SizedBox(height: AppDimens.dimen20),
 
-                // 5. Payment Method Dropdown (using PaymentMode enum)
-                _buildLabel('Payment Method'),
-                const SizedBox(height: AppDimens.dimen8),
-                _buildPaymentMethodSelector(),
-                if (_paymentMethodError != null) ...[
-                  const SizedBox(height: 6),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Text(
-                      _paymentMethodError!,
-                      style: const TextStyle(
-                        color: AppColors.expense,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                  // 5. Payment Method Dropdown (using PaymentMode enum)
+                  _buildLabel('Payment Method'),
+                  const SizedBox(height: AppDimens.dimen8),
+                  _buildPaymentMethodSelector(),
+                  if (_paymentMethodError != null) ...[
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Text(
+                        _paymentMethodError!,
+                        style: const TextStyle(
+                          color: AppColors.expense,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
 
-                const SizedBox(height: AppDimens.dimen20),
+                  const SizedBox(height: AppDimens.dimen20),
 
-                // 6. Note (Optional)
-                _buildLabel('Note (Optional)'),
-                const SizedBox(height: AppDimens.dimen8),
-                _buildNoteInput(),
+                  // 6. Note (Optional)
+                  _buildLabel('Note (Optional)'),
+                  const SizedBox(height: AppDimens.dimen8),
+                  _buildNoteInput(),
 
-                const SizedBox(height: AppDimens.dimen36),
+                  const SizedBox(height: AppDimens.dimen36),
 
-                // 7. Gradient Save Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: AppTextButton(
-                    title: isEditing ? 'Save Changes' : 'Save',
-                    borderRadius: 14,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    textStyle: theme.textTheme.titleMedium?.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
+                  // 7. Gradient Save Button
+                  SizedBox(
+                    key: _keySaveButton,
+                    width: double.infinity,
+                    height: 52,
+                    child: AppTextButton(
+                      title: isEditing ? 'Save Changes' : 'Save',
+                      borderRadius: 14,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      textStyle: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                      onPressed: _isSaving ? null : _saveTransaction,
                     ),
-                    onPressed: _isSaving ? null : _saveTransaction,
                   ),
-                ),
 
-                const SizedBox(height: AppDimens.dimen30),
-              ],
+                  const SizedBox(height: AppDimens.dimen30),
+                ],
+              ),
             ),
           ),
         ),
@@ -616,6 +923,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildTypeSegmentedToggle() {
     return Container(
+      key: _keyTypeToggle,
       height: 48,
       decoration: BoxDecoration(
         color: const Color(0xFFF0F4F8),
@@ -685,6 +993,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildAmountInput() {
     return Container(
+      key: _keyAmount,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(14),
@@ -692,6 +1001,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ),
       child: TextFormField(
         controller: _amountController,
+        focusNode: _amountFocusNode,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         style: const TextStyle(
           fontSize: 16,
@@ -716,7 +1026,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
             ),
           ),
-          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 0,
+            minHeight: 0,
+          ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -741,6 +1054,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final hasSelection = _selectedCategory != null;
 
     return InkWell(
+      key: _keyCategory,
       onTap: _isLoading ? null : _showCategoryDropdown,
       borderRadius: BorderRadius.circular(14),
       child: Container(
@@ -831,6 +1145,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final hasSelection = _selectedPaymentMode != null;
 
     return InkWell(
+      key: _keyPaymentMode,
       onTap: _showPaymentModeDropdown,
       borderRadius: BorderRadius.circular(14),
       child: Container(
@@ -856,7 +1171,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                hasSelection ? _selectedPaymentMode!.displayName : 'Select method',
+                hasSelection
+                    ? _selectedPaymentMode!.displayName
+                    : 'Select method',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: hasSelection ? FontWeight.w600 : FontWeight.w400,
@@ -886,11 +1203,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ),
       child: TextFormField(
         controller: _noteController,
+        focusNode: _noteFocusNode,
         textCapitalization: TextCapitalization.sentences,
-        style: const TextStyle(
-          fontSize: 15,
-          color: AppColors.textPrimary,
-        ),
+        style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
         decoration: const InputDecoration(
           hintText: 'Add note',
           hintStyle: TextStyle(
@@ -904,10 +1219,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             size: 20,
           ),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
