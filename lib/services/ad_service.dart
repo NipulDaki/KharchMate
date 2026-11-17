@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/environment/app_environment.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
 
 /// Centralized service handling Google AdMob Banners, Rewarded Video Ads,
@@ -12,6 +14,10 @@ class AdService {
 
   final SecureStorageService storageService;
   final AppConfig appConfig;
+  final Duration minAppOpenInterval;
+  final Duration appOpenCacheExpiry;
+  final int minSessionsBeforeFirstAd;
+
   DateTime? _adFreeUntil;
   Timer? _expiryTimer;
   final StreamController<bool> _adFreeController =
@@ -26,8 +32,22 @@ class AdService {
   bool _isShowingAppOpenAd = false;
   Completer<bool>? _appOpenCompleter;
 
-  AdService({required this.storageService, AppConfig? appConfig})
-    : appConfig = appConfig ?? AppConfig.current;
+  DateTime? _lastAppOpenShownTimestamp;
+  int _sessionCount = 0;
+
+  AdService({
+    required this.storageService,
+    AppConfig? appConfig,
+    this.minAppOpenInterval = const Duration(hours: 4),
+    this.appOpenCacheExpiry = const Duration(hours: 4),
+    this.minSessionsBeforeFirstAd = 3,
+  }) : appConfig = appConfig ?? AppConfig.current;
+
+  /// Total count of app launch sessions tracked over lifetime.
+  int get sessionCount => _sessionCount;
+
+  /// Timestamp when an App Open ad was last displayed.
+  DateTime? get lastAppOpenShownTimestamp => _lastAppOpenShownTimestamp;
 
   /// Stream that emits whenever the ad-free status changes.
   Stream<bool> get onAdFreeChanged => _adFreeController.stream;
@@ -61,7 +81,10 @@ class AdService {
 
   /// Initialize AdMob SDK and restore stored ad-free status.
   Future<void> init() async {
-    // 1. Initialize Google Mobile Ads SDK safely
+    // 1. Restore saved ad-free expiration timestamp first
+    await _loadAdFreeStatus();
+
+    // 2. Initialize Google Mobile Ads SDK safely
     try {
       await MobileAds.instance.initialize();
 
@@ -74,15 +97,23 @@ class AdService {
         ),
       );
 
-      // Preload App Open ad and Rewarded Video ad
-      loadAppOpenAd();
-      loadRewardedAd();
+      // Preload App Open ad only if user is not ad-free
+      if (!isAdFree) {
+        loadAppOpenAd();
+      }
+      // Rewarded video ads are lazily loaded on-demand when user visits settings
+      // or triggers the reward prompt to avoid downloading heavy video creatives.
     } catch (e) {
       debugPrint('AdMob SDK initialization warning: $e');
     }
 
-    // 2. Restore saved ad-free expiration timestamp
-    await _loadAdFreeStatus();
+    // 3. Track session count & restore last App Open impression timestamp
+    try {
+      _sessionCount = await storageService.incrementAppSessionCount();
+      _lastAppOpenShownTimestamp = await storageService.getAppOpenLastShown();
+    } catch (e) {
+      debugPrint('AdService session/cooldown restore error: $e');
+    }
   }
 
   /// Reload stored ad-free status from secure storage.
@@ -119,7 +150,7 @@ class AdService {
   /// extend the days. Once the 1 day has completed and the pass expires,
   /// calling this again will grant a new 1-day pass.
   Future<bool> grantAdFreePass({
-    Duration duration = const Duration(days: 1),
+    Duration duration = const Duration(days: 3),
   }) async {
     if (isAdFree) {
       // Pass is already active; do not increase the days.
@@ -135,6 +166,18 @@ class AdService {
         newExpiry.toIso8601String(),
       );
     } catch (_) {}
+
+    // Dispose cached ads to free up memory and disk storage immediately
+    _rewardedAd?.dispose();
+    _rewardedAd = null;
+    _appOpenAd?.dispose();
+    _appOpenAd = null;
+
+    if (serviceLocator.isRegistered<AnalyticsService>()) {
+      serviceLocator<AnalyticsService>().logBannerAdHidden(
+        durationDays: duration.inDays,
+      );
+    }
 
     _scheduleExpiryTimer();
     _notifyAdFreeChanged();
@@ -163,7 +206,7 @@ class AdService {
     VoidCallback? onLoaded,
     Function(LoadAdError)? onFailed,
   }) {
-    if (_rewardedAd != null || _isRewardedAdLoading) return;
+    if (isAdFree || _rewardedAd != null || _isRewardedAdLoading) return;
 
     final adUnitId = overrideAdUnitId ?? appConfig.rewardedAdUnitId;
     _isRewardedAdLoading = true;
@@ -174,6 +217,14 @@ class AdService {
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (ad) {
             _rewardedAd = ad;
+            _rewardedAd!.onPaidEvent = (ad, valueMicros, precision, currencyCode) {
+              _reportPaidEvent(
+                adFormat: 'Rewarded',
+                adUnitName: ad.adUnitId,
+                valueMicros: valueMicros,
+                currencyCode: currencyCode,
+              );
+            };
             _isRewardedAdLoading = false;
             onLoaded?.call();
           },
@@ -216,20 +267,27 @@ class AdService {
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _rewardedAd = null;
-        loadRewardedAd(); // Preload next
+        if (!isAdFree) {
+          loadRewardedAd();
+        }
         onDismissed?.call();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
         _rewardedAd = null;
-        loadRewardedAd();
+        if (!isAdFree) {
+          loadRewardedAd();
+        }
         onFailedToShow?.call(error);
       },
     );
 
     _rewardedAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) async {
-        await grantAdFreePass(duration: const Duration(days: 1));
+        if (serviceLocator.isRegistered<AnalyticsService>()) {
+          serviceLocator<AnalyticsService>().logRewardedAdCompleted(durationDays: 3);
+        }
+        await grantAdFreePass(duration: const Duration(days: 3));
         onUserEarnedReward();
       },
     );
@@ -255,6 +313,14 @@ class AdService {
           ad.dispose();
           onAdFailedToLoad(error);
         },
+        onPaidEvent: (ad, valueMicros, precision, currencyCode) {
+          _reportPaidEvent(
+            adFormat: 'Banner',
+            adUnitName: ad.adUnitId,
+            valueMicros: valueMicros,
+            currencyCode: currencyCode,
+          );
+        },
       ),
     )..load();
   }
@@ -265,12 +331,74 @@ class AdService {
 
   bool _hasShownAppOpenAdOnLaunch = false;
 
-  /// Whether an App Open ad is loaded, not expired (< 4 hrs), and ready to display.
+  /// Whether the cooldown period between App Open impressions is currently active.
+  bool get isCooldownActive {
+    if (_lastAppOpenShownTimestamp == null) return false;
+    return DateTime.now().difference(_lastAppOpenShownTimestamp!) <
+        minAppOpenInterval;
+  }
+
+  /// Remaining duration before the next App Open ad is permitted to display.
+  Duration? get remainingCooldown {
+    if (!isCooldownActive || _lastAppOpenShownTimestamp == null) return null;
+    final elapsed = DateTime.now().difference(_lastAppOpenShownTimestamp!);
+    final diff = minAppOpenInterval - elapsed;
+    return diff.isNegative ? Duration.zero : diff;
+  }
+
+  /// Whether an App Open ad is loaded, not expired (< appOpenCacheExpiry),
+  /// and ready to display. If an ad is expired, it is immediately disposed
+  /// and a fresh one is requested in the background.
   bool get isAppOpenAdAvailable {
-    return !isAdFree &&
-        _appOpenAd != null &&
-        _appOpenLoadTime != null &&
-        DateTime.now().difference(_appOpenLoadTime!) < const Duration(hours: 4);
+    if (isAdFree || _appOpenAd == null || _appOpenLoadTime == null) {
+      return false;
+    }
+
+    final isExpired =
+        DateTime.now().difference(_appOpenLoadTime!) >= appOpenCacheExpiry;
+    if (isExpired) {
+      debugPrint(
+        'AppOpenAd expired (cached >= ${appOpenCacheExpiry.inHours}h). Disposing & requesting fresh ad.',
+      );
+      _appOpenAd?.dispose();
+      _appOpenAd = null;
+      _appOpenLoadTime = null;
+      loadAppOpenAd();
+      return false;
+    }
+
+    return true;
+  }
+
+  /// Comprehensive check evaluating all rules:
+  /// 1. User is not Ad-Free
+  /// 2. No other App Open ad is currently visible
+  /// 3. Session count has met or exceeded [minSessionsBeforeFirstAd] threshold
+  /// 4. Cooldown interval ([minAppOpenInterval]) has elapsed since last impression
+  /// 5. Valid, non-expired App Open ad is cached and ready
+  bool get canShowAppOpenAdNow {
+    if (isAdFree) {
+      debugPrint('AppOpenAd suppressed: User is currently Ad-Free.');
+      return false;
+    }
+    if (_isShowingAppOpenAd) {
+      debugPrint('AppOpenAd suppressed: An App Open ad is already displaying.');
+      return false;
+    }
+    if (_sessionCount < minSessionsBeforeFirstAd) {
+      debugPrint(
+        'AppOpenAd suppressed: Session count ($_sessionCount) < $minSessionsBeforeFirstAd threshold.',
+      );
+      return false;
+    }
+    if (isCooldownActive) {
+      final rem = remainingCooldown?.inMinutes ?? 0;
+      debugPrint(
+        'AppOpenAd suppressed: Cooldown active ($rem mins remaining of ${minAppOpenInterval.inHours}h).',
+      );
+      return false;
+    }
+    return isAppOpenAdAvailable;
   }
 
   /// Whether an App Open ad is currently loading.
@@ -318,6 +446,14 @@ class AdService {
         adLoadCallback: AppOpenAdLoadCallback(
           onAdLoaded: (ad) {
             _appOpenAd = ad;
+            _appOpenAd!.onPaidEvent = (ad, valueMicros, precision, currencyCode) {
+              _reportPaidEvent(
+                adFormat: 'AppOpen',
+                adUnitName: ad.adUnitId,
+                valueMicros: valueMicros,
+                currencyCode: currencyCode,
+              );
+            };
             _appOpenLoadTime = DateTime.now();
             _isAppOpenAdLoading = false;
             debugPrint('AppOpenAd loaded successfully ($adUnitId).');
@@ -363,19 +499,28 @@ class AdService {
     }
   }
 
-  /// Shows the loaded AppOpenAd.
-  /// Calls [onComplete] when dismissed or if display fails.
+  /// Shows the loaded AppOpenAd if all conditions are satisfied.
+  /// Calls [onComplete] when dismissed or if display fails or is suppressed.
   void showAppOpenAd({
     VoidCallback? onComplete,
   }) {
-    if (!isAppOpenAdAvailable) {
+    if (!canShowAppOpenAdNow) {
       onComplete?.call();
-      loadAppOpenAd();
+      if (!isAppOpenAdAvailable && !_isAppOpenAdLoading && !isAdFree) {
+        loadAppOpenAd();
+      }
       return;
     }
 
     _isShowingAppOpenAd = true;
     _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) async {
+        final now = DateTime.now();
+        _lastAppOpenShownTimestamp = now;
+        try {
+          await storageService.setAppOpenLastShown(now);
+        } catch (_) {}
+      },
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _appOpenAd = null;
@@ -398,14 +543,17 @@ class AdService {
     _appOpenAd!.show();
   }
 
-  /// Shows the AppOpenAd when entering Dashboard on app launch.
+  /// Shows the AppOpenAd when entering Dashboard on cold launch.
   /// If the ad is already loaded, it displays immediately.
   /// If still loading, it waits up to [timeout] and displays upon load.
   Future<void> showAppOpenAdOnDashboard({
-    Duration timeout = const Duration(seconds: 6),
+    Duration timeout = const Duration(seconds: 2),
     VoidCallback? onDismissed,
   }) async {
-    if (isAdFree || _hasShownAppOpenAdOnLaunch) {
+    if (isAdFree ||
+        _hasShownAppOpenAdOnLaunch ||
+        _sessionCount < minSessionsBeforeFirstAd ||
+        isCooldownActive) {
       return;
     }
 
@@ -422,13 +570,39 @@ class AdService {
     if (_isAppOpenAdLoading && _appOpenCompleter != null) {
       try {
         final success = await _appOpenCompleter!.future.timeout(timeout);
-        if (success && isAppOpenAdAvailable) {
+        if (success && canShowAppOpenAdNow && !_hasShownAppOpenAdOnLaunch) {
           _hasShownAppOpenAdOnLaunch = true;
           showAppOpenAd(onComplete: onDismissed);
         }
       } catch (e) {
         debugPrint('AppOpenAd dashboard wait timeout or error: $e');
       }
+    }
+  }
+
+  /// Shows the AppOpenAd when the app returns from background to foreground.
+  /// Evaluates [canShowCheck] (e.g. route safety, active dialogs) before presenting.
+  Future<void> showAppOpenAdOnResume({
+    bool Function()? canShowCheck,
+    VoidCallback? onDismissed,
+  }) async {
+    if (isAdFree ||
+        _isShowingAppOpenAd ||
+        _sessionCount < minSessionsBeforeFirstAd ||
+        isCooldownActive) {
+      return;
+    }
+
+    // Check if the current route / UI state is safe for ads
+    if (canShowCheck != null && !canShowCheck()) {
+      debugPrint('AppOpenAd on resume suppressed by route or UI safety check.');
+      return;
+    }
+
+    if (isAppOpenAdAvailable) {
+      showAppOpenAd(onComplete: onDismissed);
+    } else if (!_isAppOpenAdLoading) {
+      loadAppOpenAd();
     }
   }
 
@@ -443,7 +617,7 @@ class AdService {
       return;
     }
 
-    if (isAppOpenAdAvailable) {
+    if (canShowAppOpenAdNow) {
       showAppOpenAd(onComplete: onComplete);
       return;
     }
@@ -456,12 +630,50 @@ class AdService {
       }
     }
 
-    if (isAppOpenAdAvailable) {
+    if (canShowAppOpenAdNow) {
       showAppOpenAd(onComplete: onComplete);
     } else {
       onComplete();
-      loadAppOpenAd();
+      if (!isAppOpenAdAvailable && !_isAppOpenAdLoading && !isAdFree) {
+        loadAppOpenAd();
+      }
     }
+  }
+
+  /// Sends Impression-Level Ad Revenue (ILR) data to Firebase Analytics
+  void _reportPaidEvent({
+    required String adFormat,
+    required String adUnitName,
+    required double valueMicros,
+    required String currencyCode,
+  }) {
+    if (serviceLocator.isRegistered<AnalyticsService>()) {
+      serviceLocator<AnalyticsService>().logAdImpression(
+        adFormat: adFormat,
+        adUnitName: adUnitName,
+        value: valueMicros / 1000000.0,
+        currency: currencyCode,
+      );
+    }
+  }
+
+  // ===========================================================================
+  // TESTING HOOKS
+  // ===========================================================================
+
+  @visibleForTesting
+  void setMockSessionCount(int count) {
+    _sessionCount = count;
+  }
+
+  @visibleForTesting
+  void setMockLastShownTimestamp(DateTime? timestamp) {
+    _lastAppOpenShownTimestamp = timestamp;
+  }
+
+  @visibleForTesting
+  void setMockAppOpenLoadTime(DateTime? loadTime) {
+    _appOpenLoadTime = loadTime;
   }
 
   /// Dispose any active resources.

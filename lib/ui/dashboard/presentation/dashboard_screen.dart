@@ -129,7 +129,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _showAppOpenAdIfAvailable() {
     if (serviceLocator.isRegistered<AdService>()) {
       final adService = serviceLocator<AdService>();
-      adService.showAppOpenAdOnDashboard();
+      // Suppress App Open ad if Coach Mark tutorial is actively showing
+      if (!CoachMarkHelper.isShowing) {
+        adService.showAppOpenAdOnDashboard();
+      }
     }
   }
 

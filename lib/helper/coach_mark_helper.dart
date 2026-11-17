@@ -13,6 +13,9 @@ class CoachMarkHelper {
   static TutorialCoachMark? _activeTutorial;
   static bool _isShowing = false;
 
+  /// Returns `true` if a coach mark tutorial is currently visible on screen.
+  static bool get isShowing => _isShowing;
+
   /// Safely dismisses and cleans up any currently visible coach mark overlay.
   static void dismissActiveTutorial() {
     if (_activeTutorial != null && _activeTutorial!.isShowing) {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/enum/payment_mode.dart';
 import 'package:kharch_mate/helper/coach_mark_helper.dart';
 import 'package:kharch_mate/models/category.dart';
@@ -740,6 +741,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
 
         final created = await _dbService.insertTransaction(item);
+
+        if (serviceLocator.isRegistered<AnalyticsService>()) {
+          final analytics = serviceLocator<AnalyticsService>();
+          if (_selectedType == TransactionType.income) {
+            analytics.logIncomeAdded(
+              amount: amount,
+              category: _selectedCategory!.name,
+              paymentMethod: _selectedPaymentMode?.displayName,
+            );
+          } else {
+            analytics.logExpenseAdded(
+              amount: amount,
+              category: _selectedCategory!.name,
+              paymentMethod: _selectedPaymentMode?.displayName,
+            );
+          }
+        }
 
         if (mounted) {
           setState(() => _isSaving = false);

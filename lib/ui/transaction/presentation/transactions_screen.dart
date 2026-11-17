@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
 import 'package:kharch_mate/models/user_profile.dart';
@@ -117,6 +118,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       _loadTransactions();
+      final query = value.trim();
+      if (query.isNotEmpty && serviceLocator.isRegistered<AnalyticsService>()) {
+        serviceLocator<AnalyticsService>().logSearchUsed(
+          queryLength: query.length,
+        );
+      }
     });
   }
 

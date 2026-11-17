@@ -4,6 +4,7 @@ import 'package:kharch_mate/helper/coach_mark_helper.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
 import 'package:kharch_mate/widgets/app_text_button.dart';
@@ -11,8 +12,13 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class AddCategoryScreen extends StatefulWidget {
   final CategoryType? initialType;
+  final CategoryModel? initialCategory;
 
-  const AddCategoryScreen({super.key, this.initialType});
+  const AddCategoryScreen({
+    super.key,
+    this.initialType,
+    this.initialCategory,
+  });
 
   @override
   State<AddCategoryScreen> createState() => _AddCategoryScreenState();
@@ -65,7 +71,12 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialType != null) {
+    if (widget.initialCategory != null) {
+      _nameController.text = widget.initialCategory!.name;
+      _selectedType = widget.initialCategory!.type;
+      _selectedIconKey = widget.initialCategory!.icon;
+      _selectedColorHex = widget.initialCategory!.color;
+    } else if (widget.initialType != null) {
       _selectedType = widget.initialType!;
     }
     _dbService = serviceLocator<DatabaseService>();
@@ -180,23 +191,46 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
 
     setState(() => _isSaving = true);
 
-    CategoryModel? insertedCategory;
+    CategoryModel? savedCategory;
     try {
-      final newCategory = CategoryModel(
-        name: categoryName,
-        type: _selectedType,
-        icon: _selectedIconKey,
-        color: _selectedColorHex,
-        isDefault: false,
-        createdAt: DateTime.now(),
-      );
+      if (widget.initialCategory != null) {
+        final updated = widget.initialCategory!.copyWith(
+          name: categoryName,
+          type: _selectedType,
+          icon: _selectedIconKey,
+          color: _selectedColorHex,
+        );
+        await _dbService.updateCategory(updated);
+        savedCategory = updated;
+        if (serviceLocator.isRegistered<AnalyticsService>()) {
+          serviceLocator<AnalyticsService>().logCategoryEdited(
+            categoryName: categoryName,
+            type: _selectedType.name,
+          );
+        }
+      } else {
+        final newCategory = CategoryModel(
+          name: categoryName,
+          type: _selectedType,
+          icon: _selectedIconKey,
+          color: _selectedColorHex,
+          isDefault: false,
+          createdAt: DateTime.now(),
+        );
 
-      insertedCategory = await _dbService.insertCategory(newCategory);
+        savedCategory = await _dbService.insertCategory(newCategory);
+        if (serviceLocator.isRegistered<AnalyticsService>()) {
+          serviceLocator<AnalyticsService>().logCategoryCreated(
+            categoryName: categoryName,
+            type: _selectedType.name,
+          );
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to add category: $e'),
+            content: Text('Failed to save category: $e'),
             backgroundColor: AppColors.expense,
           ),
         );
@@ -208,7 +242,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
     if (mounted) {
       setState(() => _isSaving = false);
       if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(insertedCategory);
+        Navigator.of(context).pop(savedCategory);
       }
     }
   }

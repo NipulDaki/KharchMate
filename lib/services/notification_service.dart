@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -196,6 +198,11 @@ class NotificationService {
   }) async {
     await scheduleMorningReminder(hour: morningHour, minute: morningMinute);
     await scheduleEveningReminder(hour: eveningHour, minute: eveningMinute);
+    if (serviceLocator.isRegistered<AnalyticsService>()) {
+      serviceLocator<AnalyticsService>().logReminderEnabled(
+        reminderType: 'daily',
+      );
+    }
   }
 
   /// Schedules daily morning reminder (default: 9:00 AM).

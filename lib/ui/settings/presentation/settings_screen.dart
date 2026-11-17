@@ -12,7 +12,9 @@ import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/services/ad_service.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
+import 'package:kharch_mate/services/notification_service.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
@@ -501,16 +503,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: AppColors.dividerColor,
                     ),
 
-                    // 3. Notifications & Reminders (Commented out)
-                    /*
+                    // 3. Notifications & Reminders
                     _buildSettingsTile(
                       icon: Icons.notifications_none_rounded,
                       title: 'Notifications & Reminders',
-                      onTap: () {
-                        _showInfoDialog(
-                          'Notifications & Reminders',
-                          'Stay informed with daily budget reminders and expense tracking alerts.',
-                        );
+                      subtitle: 'Daily reminders at 9:00 AM & 7:00 PM',
+                      onTap: () async {
+                        if (serviceLocator.isRegistered<NotificationService>()) {
+                          await serviceLocator<NotificationService>().scheduleDailyReminders();
+                        }
+                        if (serviceLocator.isRegistered<AnalyticsService>()) {
+                          serviceLocator<AnalyticsService>().logReminderEnabled(
+                            reminderType: 'daily',
+                          );
+                        }
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Daily expense reminders enabled (9:00 AM & 7:00 PM)!'),
+                              backgroundColor: AppColors.income,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
                       },
                     ),
                     const Divider(
@@ -518,7 +533,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       indent: 64,
                       color: AppColors.dividerColor,
                     ),
-                    */
 
                     // 4. Dark Mode Switch (Commented out)
                     /*
@@ -1051,6 +1065,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _playRewardedAd() {
     if (_adService == null) return;
+
+    if (serviceLocator.isRegistered<AnalyticsService>()) {
+      serviceLocator<AnalyticsService>().logRewardedAdClicked(
+        placement: 'settings',
+      );
+    }
 
     if (!_adService!.isRewardedAdReady) {
       ScaffoldMessenger.of(context).showSnackBar(

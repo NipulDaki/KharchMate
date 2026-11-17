@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
 import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
@@ -155,7 +156,15 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
     if (confirmed == true && mounted) {
       try {
-        await _dbService.deleteTransaction(_transaction!.id!);
+        final deletedId = _transaction!.id!;
+        final deletedType = _transaction!.type.name;
+        await _dbService.deleteTransaction(deletedId);
+        if (serviceLocator.isRegistered<AnalyticsService>()) {
+          serviceLocator<AnalyticsService>().logTransactionDeleted(
+            transactionId: deletedId,
+            type: deletedType,
+          );
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

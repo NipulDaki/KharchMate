@@ -7,6 +7,7 @@ import 'package:kharch_mate/environment/app_environment.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/services/ad_service.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 
 /// Dashboard Inline Banner Ad Widget.
 ///
@@ -147,6 +148,12 @@ class _DashboardBannerAdWidgetState extends State<DashboardBannerAdWidget> {
 
   void _watchVideo() {
     if (_adService == null) return;
+
+    if (serviceLocator.isRegistered<AnalyticsService>()) {
+      serviceLocator<AnalyticsService>().logRewardedAdClicked(
+        placement: 'dashboard',
+      );
+    }
 
     if (!_adService!.isRewardedAdReady) {
       ScaffoldMessenger.of(context).showSnackBar(

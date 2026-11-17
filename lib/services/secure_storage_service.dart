@@ -16,6 +16,9 @@ class SecureStorageService {
       'coach_mark_add_category_seen_v1';
   static const String keyCoachMarkSettingsAdFree =
       'coach_mark_settings_ad_free_seen_v1';
+  static const String keyAppOpenAdLastShownTimestamp =
+      'app_open_ad_last_shown_timestamp_v1';
+  static const String keyAppSessionCount = 'app_session_count_v1';
 
   Future writeSecureData(String key, dynamic value) async {
     final strVal = value.toString();
@@ -81,6 +84,37 @@ class SecureStorageService {
 
   Future<void> markCoachMarkSeen(String key) async {
     await writeSecureData(key, 'true');
+  }
+
+  /// Retrieves the timestamp when an App Open Ad was last displayed.
+  Future<DateTime?> getAppOpenLastShown() async {
+    final iso = await getString(keyAppOpenAdLastShownTimestamp);
+    if (iso != null && iso.isNotEmpty) {
+      return DateTime.tryParse(iso);
+    }
+    return null;
+  }
+
+  /// Persists the timestamp of an App Open Ad impression.
+  Future<void> setAppOpenLastShown(DateTime timestamp) async {
+    await writeSecureData(
+      keyAppOpenAdLastShownTimestamp,
+      timestamp.toIso8601String(),
+    );
+  }
+
+  /// Retrieves the lifetime count of completed app launch sessions.
+  Future<int> getAppSessionCount() async {
+    final count = await getInt(keyAppSessionCount);
+    return count ?? 0;
+  }
+
+  /// Increments and persists the app launch session count. Returns the new count.
+  Future<int> incrementAppSessionCount() async {
+    final current = await getAppSessionCount();
+    final next = current + 1;
+    await writeSecureData(keyAppSessionCount, next.toString());
+    return next;
   }
 
   Future<void> resetAllCoachMarks() async {

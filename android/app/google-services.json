@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "508154105190",
+    "project_id": "kharchmate-bd18a",
+    "storage_bucket": "kharchmate-bd18a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508154105190:android:948f41cb3f81cd2f190ca7",
+        "android_client_info": {
+          "package_name": "com.nipuldaki.kharchamate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsQOUoNzqtQopG14XV_krd0qMogGl-ccM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

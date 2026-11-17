@@ -3,6 +3,7 @@ import 'package:kharch_mate/database/app_database.dart';
 import 'package:kharch_mate/environment/app_environment.dart';
 import 'package:kharch_mate/router/app_router.dart';
 import 'package:kharch_mate/services/ad_service.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
 import 'package:kharch_mate/services/notification_service.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
@@ -12,6 +13,11 @@ final serviceLocator = GetIt.instance;
 Future<void> setupServiceLocator({AppConfig? config}) async {
   final appConfig = config ?? AppConfig.current;
   AppConfig.initialize(appConfig);
+
+  // Initialize Firebase Analytics
+  final analyticsService = AnalyticsService();
+  await analyticsService.init();
+  await analyticsService.logAppOpen();
 
   final appDatabase = AppDatabase();
   await appDatabase.init();
@@ -29,6 +35,8 @@ Future<void> setupServiceLocator({AppConfig? config}) async {
   serviceLocator
     // App Environment Configuration
     ..registerSingleton<AppConfig>(appConfig)
+    // Analytics Service
+    ..registerSingleton<AnalyticsService>(analyticsService)
     // Database and Persistence Service
     ..registerSingleton<AppDatabase>(appDatabase)
     ..registerLazySingleton<DatabaseService>(

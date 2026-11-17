@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/ui/categories/presentation/add_category_screen.dart';
 import 'package:kharch_mate/ui/categories/presentation/categories_screen.dart';
@@ -23,13 +25,72 @@ import 'package:kharch_mate/ui/transaction/presentation/transactions_screen.dart
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 String? pendingRedirectLocation;
 
+/// Route observer tracking active navigation states to protect critical user flows
+/// (such as logging a transaction, editing categories, or onboarding) from ad interruptions.
+class AppRouteObserver extends NavigatorObserver {
+  static String? currentRouteName;
+
+  static final Set<String> _suppressedRoutes = {
+    AppRoutes.addTransaction.name,
+    AppRoutes.addCategory.name,
+    AppRoutes.welcome.name,
+    AppRoutes.userName.name,
+    AppRoutes.appTutorial.name,
+    AppRoutes.splash.name,
+  };
+
+  /// Returns `true` if the currently visible screen is safe to display an App Open ad.
+  static bool get isCurrentRouteSafeForAds {
+    if (currentRouteName == null) return true;
+    return !_suppressedRoutes.contains(currentRouteName);
+  }
+
+  void _logScreen(Route<dynamic> route) {
+    final name = route.settings.name;
+    if (name != null && name.isNotEmpty) {
+      if (serviceLocator.isRegistered<AnalyticsService>()) {
+        serviceLocator<AnalyticsService>().logScreenView(screenName: name);
+      }
+    }
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    if (route.settings.name != null) {
+      currentRouteName = route.settings.name;
+      _logScreen(route);
+    }
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    if (previousRoute?.settings.name != null) {
+      currentRouteName = previousRoute?.settings.name;
+      _logScreen(previousRoute!);
+    }
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    if (newRoute?.settings.name != null) {
+      currentRouteName = newRoute?.settings.name;
+      _logScreen(newRoute!);
+    }
+  }
+}
+
 class AppRouter {
   static final _rootTabNavigatorKey = GlobalKey<NavigatorState>();
+  static final AppRouteObserver routeObserver = AppRouteObserver();
 
   static final GoRouter _router = GoRouter(
     initialLocation: AppRoutes.splash.path,
     debugLogDiagnostics: true,
     navigatorKey: rootNavigatorKey,
+    observers: [routeObserver],
     routes: [
       GoRoute(
         name: AppRoutes.splash.name,
