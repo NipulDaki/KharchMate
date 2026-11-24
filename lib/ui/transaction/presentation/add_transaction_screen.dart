@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
-import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/enum/payment_mode.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/helper/coach_mark_helper.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
@@ -13,6 +13,7 @@ import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
 import 'package:kharch_mate/widgets/app_text_button.dart';
@@ -255,13 +256,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      builder: (context, child) {
+      builder: (ctx, child) {
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.white,
-              onSurface: AppColors.textPrimary,
+          data: Theme.of(ctx).copyWith(
+            colorScheme: ColorScheme(
+              brightness: Theme.of(ctx).brightness,
+              primary: ctx.colors.primary,
+              onPrimary: Colors.white,
+              surface: ctx.colors.cardBackground,
+              onSurface: ctx.colors.textPrimary,
+              secondary: ctx.colors.primary,
+              onSecondary: Colors.white,
+              error: ctx.colors.expense,
+              onError: Colors.white,
+            ),
+            dialogTheme: DialogThemeData(
+              backgroundColor: ctx.colors.cardBackground,
             ),
           ),
           child: child!,
@@ -327,7 +337,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.white,
+      backgroundColor: context.colors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -344,7 +354,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.borderColor,
+                      color: ctx.colors.cardBorder,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -357,10 +367,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   children: [
                     Text(
                       'Select $typeLabel Category',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: ctx.colors.textPrimary,
                       ),
                     ),
                     InkWell(
@@ -375,28 +385,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryBackground,
+                          color: ctx.colors.primaryBackground,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: AppColors.primaryLight,
+                            color: ctx.colors.primaryLight,
                             width: 1,
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               Icons.add_circle_outline_rounded,
                               size: 15,
-                              color: AppColors.primaryDark,
+                              color: ctx.colors.primary,
                             ),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
                               'Add New',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.primaryDark,
+                                color: ctx.colors.primary,
                               ),
                             ),
                           ],
@@ -422,13 +432,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: isIncome
-                          ? AppColors.incomeLight
-                          : AppColors.primaryBackground,
+                          ? ctx.colors.incomeContainer
+                          : ctx.colors.primaryBackground,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isIncome
-                            ? AppColors.income.withValues(alpha: 0.35)
-                            : AppColors.primary.withValues(alpha: 0.35),
+                            ? ctx.colors.income.withValues(alpha: 0.35)
+                            : ctx.colors.primary.withValues(alpha: 0.35),
                         width: 1.2,
                       ),
                     ),
@@ -439,8 +449,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           height: 36,
                           decoration: BoxDecoration(
                             color: isIncome
-                                ? AppColors.income
-                                : AppColors.primary,
+                                ? ctx.colors.income
+                                : ctx.colors.primary,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -460,16 +470,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                   color: isIncome
-                                      ? AppColors.income
-                                      : AppColors.primaryDark,
+                                      ? ctx.colors.income
+                                      : ctx.colors.primary,
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              const Text(
+                              Text(
                                 'Customize name, icon, and colors for fast tracking',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: AppColors.textSecondary,
+                                  color: ctx.colors.textSecondary,
                                 ),
                               ),
                             ],
@@ -479,8 +489,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           Icons.arrow_forward_ios_rounded,
                           size: 14,
                           color: isIncome
-                              ? AppColors.income
-                              : AppColors.primaryDark,
+                              ? ctx.colors.income
+                              : ctx.colors.primary,
                         ),
                       ],
                     ),
@@ -495,7 +505,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     child: Center(
                       child: Text(
                         'No categories found. Tap "+ Add New $typeLabel Category" above!',
-                        style: const TextStyle(color: AppColors.textHint),
+                        style: TextStyle(color: ctx.colors.textHint),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -505,9 +515,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: _categories.length,
-                      separatorBuilder: (_, _) => const Divider(
+                      separatorBuilder: (_, _) => Divider(
                         height: 1,
-                        color: AppColors.dividerColor,
+                        color: ctx.colors.divider,
                       ),
                       itemBuilder: (context, index) {
                         final cat = _categories[index];
@@ -537,13 +547,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               fontWeight: isSelected
                                   ? FontWeight.w700
                                   : FontWeight.w500,
-                              color: AppColors.textPrimary,
+                              color: ctx.colors.textPrimary,
                             ),
                           ),
                           trailing: isSelected
-                              ? const Icon(
+                              ? Icon(
                                   Icons.check_circle_rounded,
-                                  color: AppColors.primary,
+                                  color: ctx.colors.primary,
                                 )
                               : null,
                           onTap: () {
@@ -575,7 +585,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     await showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.white,
+      backgroundColor: context.colors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -592,20 +602,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.borderColor,
+                      color: ctx.colors.cardBorder,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     'Select Payment Method',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: ctx.colors.textPrimary,
                     ),
                   ),
                 ),
@@ -615,7 +625,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: modes.length,
                   separatorBuilder: (_, _) =>
-                      const Divider(height: 1, color: AppColors.dividerColor),
+                      Divider(height: 1, color: ctx.colors.divider),
                   itemBuilder: (context, index) {
                     final mode = modes[index];
                     final isSelected = _selectedPaymentMode == mode;
@@ -624,13 +634,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       leading: Container(
                         width: 38,
                         height: 38,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFF0F4F8),
+                        decoration: BoxDecoration(
+                          color: ctx.colors.elevatedSurface,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           mode.icon,
-                          color: AppColors.textPrimary,
+                          color: ctx.colors.textPrimary,
                           size: 20,
                         ),
                       ),
@@ -640,13 +650,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           fontWeight: isSelected
                               ? FontWeight.w700
                               : FontWeight.w500,
-                          color: AppColors.textPrimary,
+                          color: ctx.colors.textPrimary,
                         ),
                       ),
                       trailing: isSelected
-                          ? const Icon(
+                          ? Icon(
                               Icons.check_circle_rounded,
-                              color: AppColors.primary,
+                              color: ctx.colors.primary,
                             )
                           : null,
                       onTap: () {
@@ -779,14 +789,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final dateFormatted = DateFormat('dd MMM yyyy').format(_selectedDate);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.scaffoldBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_rounded,
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           onPressed: () {
             if (Navigator.of(context).canPop()) {
@@ -797,16 +807,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         title: Text(
           isEditing ? 'Edit Transaction' : 'Add Transaction',
           style: theme.textTheme.titleLarge?.copyWith(
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.help_outline_rounded,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
             tooltip: 'Interactive Tour',
             onPressed: () {
@@ -854,8 +864,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       padding: const EdgeInsets.only(left: 4),
                       child: Text(
                         _categoryError!,
-                        style: const TextStyle(
-                          color: AppColors.expense,
+                        style: TextStyle(
+                          color: context.colors.expense,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -882,8 +892,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       padding: const EdgeInsets.only(left: 4),
                       child: Text(
                         _paymentMethodError!,
-                        style: const TextStyle(
-                          color: AppColors.expense,
+                        style: TextStyle(
+                          color: context.colors.expense,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -910,7 +920,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       borderRadius: 14,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       textStyle: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.white,
+                        color: Colors.white,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
                       ),
@@ -931,10 +941,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
+        color: context.colors.textPrimary,
       ),
     );
   }
@@ -944,7 +954,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       key: _keyTypeToggle,
       height: 48,
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F4F8),
+        color: context.colors.elevatedSurface,
         borderRadius: BorderRadius.circular(24),
       ),
       padding: const EdgeInsets.all(4),
@@ -957,8 +967,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   color: _selectedType == TransactionType.expense
-                      ? AppColors.primary
-                      : AppColors.transparent,
+                      ? context.colors.primary
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 alignment: Alignment.center,
@@ -966,8 +976,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   'Expense',
                   style: TextStyle(
                     color: _selectedType == TransactionType.expense
-                        ? AppColors.white
-                        : AppColors.textPrimary,
+                        ? Colors.white
+                        : context.colors.textSecondary,
                     fontWeight: _selectedType == TransactionType.expense
                         ? FontWeight.w700
                         : FontWeight.w600,
@@ -984,8 +994,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   color: _selectedType == TransactionType.income
-                      ? AppColors.primary
-                      : AppColors.transparent,
+                      ? context.colors.primary
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 alignment: Alignment.center,
@@ -993,8 +1003,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   'Income',
                   style: TextStyle(
                     color: _selectedType == TransactionType.income
-                        ? AppColors.white
-                        : AppColors.textPrimary,
+                        ? Colors.white
+                        : context.colors.textSecondary,
                     fontWeight: _selectedType == TransactionType.income
                         ? FontWeight.w700
                         : FontWeight.w600,
@@ -1013,23 +1023,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Container(
       key: _keyAmount,
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       child: TextFormField(
         controller: _amountController,
         focusNode: _amountFocusNode,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: context.colors.textPrimary,
         ),
         decoration: InputDecoration(
           hintText: 'Enter amount',
-          hintStyle: const TextStyle(
-            color: AppColors.textHint,
+          hintStyle: TextStyle(
+            color: context.colors.textHint,
             fontSize: 15,
             fontWeight: FontWeight.w400,
           ),
@@ -1037,10 +1047,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Text(
               _currencySymbol,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
           ),
@@ -1078,12 +1088,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: context.colors.inputFill,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: _categoryError != null
-                ? AppColors.expense
-                : AppColors.borderColor,
+                ? context.colors.expense
+                : context.colors.inputBorder,
           ),
         ),
         child: Row(
@@ -1095,9 +1105,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 size: 22,
               )
             else
-              const Icon(
+              Icon(
                 Icons.work_outline_rounded,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
                 size: 22,
               ),
             const SizedBox(width: 14),
@@ -1108,14 +1118,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   fontSize: 15,
                   fontWeight: hasSelection ? FontWeight.w600 : FontWeight.w400,
                   color: hasSelection
-                      ? AppColors.textPrimary
-                      : AppColors.textHint,
+                      ? context.colors.textPrimary
+                      : context.colors.textHint,
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.textPrimary,
+              color: context.colors.textSecondary,
               size: 22,
             ),
           ],
@@ -1131,25 +1141,25 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: context.colors.inputFill,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderColor),
+          border: Border.all(color: context.colors.inputBorder),
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.calendar_today_outlined,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               size: 20,
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 dateFormatted,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
             ),
@@ -1169,12 +1179,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: context.colors.inputFill,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: _paymentMethodError != null
-                ? AppColors.expense
-                : AppColors.borderColor,
+                ? context.colors.expense
+                : context.colors.inputBorder,
           ),
         ),
         child: Row(
@@ -1183,7 +1193,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               hasSelection
                   ? _selectedPaymentMode!.icon
                   : Icons.credit_card_outlined,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               size: 22,
             ),
             const SizedBox(width: 14),
@@ -1196,14 +1206,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   fontSize: 15,
                   fontWeight: hasSelection ? FontWeight.w600 : FontWeight.w400,
                   color: hasSelection
-                      ? AppColors.textPrimary
-                      : AppColors.textHint,
+                      ? context.colors.textPrimary
+                      : context.colors.textHint,
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: AppColors.textPrimary,
+              color: context.colors.textSecondary,
               size: 22,
             ),
           ],
@@ -1215,29 +1225,32 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Widget _buildNoteInput() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       child: TextFormField(
         controller: _noteController,
         focusNode: _noteFocusNode,
         textCapitalization: TextCapitalization.sentences,
-        style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
-        decoration: const InputDecoration(
+        style: TextStyle(fontSize: 15, color: context.colors.textPrimary),
+        decoration: InputDecoration(
           hintText: 'Add note',
           hintStyle: TextStyle(
-            color: AppColors.textHint,
+            color: context.colors.textHint,
             fontSize: 15,
             fontWeight: FontWeight.w400,
           ),
           prefixIcon: Icon(
             Icons.edit_outlined,
-            color: AppColors.textPrimary,
+            color: context.colors.textSecondary,
             size: 20,
           ),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
       ),
     );

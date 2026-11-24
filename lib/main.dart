@@ -4,6 +4,8 @@ import 'package:kharch_mate/environment/app_environment.dart';
 import 'package:kharch_mate/helper/coach_mark_helper.dart';
 import 'package:kharch_mate/router/app_router.dart';
 import 'package:kharch_mate/services/ad_service.dart';
+import 'package:kharch_mate/services/app_update_service.dart';
+import 'package:kharch_mate/services/theme_service.dart';
 import 'package:kharch_mate/theme/themes.dart';
 
 /// Application bootstrap entry point with customizable environment.
@@ -41,6 +43,10 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _handleAppResume() {
+    if (serviceLocator.isRegistered<AppUpdateService>()) {
+      serviceLocator<AppUpdateService>().resumeUpdateIfInProgress();
+    }
+
     if (!serviceLocator.isRegistered<AdService>()) return;
 
     final adService = serviceLocator<AdService>();
@@ -48,7 +54,10 @@ class _MyAppState extends State<MyApp> {
       canShowCheck: () {
         final isSafeRoute = AppRouteObserver.isCurrentRouteSafeForAds;
         final isCoachMarkShowing = CoachMarkHelper.isShowing;
-        return isSafeRoute && !isCoachMarkShowing;
+        final isUpdateActive =
+            serviceLocator.isRegistered<AppUpdateService>() &&
+                serviceLocator<AppUpdateService>().isUpdateInProgress;
+        return isSafeRoute && !isCoachMarkShowing && !isUpdateActive;
       },
     );
   }
@@ -61,12 +70,21 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: AppConfig.current.appTitle,
-      theme: AppThemes.coreTheme,
-      routerConfig: AppRouter.router,
-      debugShowCheckedModeBanner: AppConfig.current.isDevelopment,
-      supportedLocales: const [Locale('en', '')],
+    final themeService = serviceLocator<ThemeService>();
+
+    return ListenableBuilder(
+      listenable: themeService,
+      builder: (context, _) {
+        return MaterialApp.router(
+          title: AppConfig.current.appTitle,
+          theme: AppThemes.lightTheme,
+          darkTheme: AppThemes.darkTheme,
+          themeMode: themeService.themeMode,
+          routerConfig: AppRouter.router,
+          debugShowCheckedModeBanner: AppConfig.current.isDevelopment,
+          supportedLocales: const [Locale('en', '')],
+        );
+      },
     );
   }
 }

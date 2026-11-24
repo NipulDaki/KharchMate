@@ -19,6 +19,7 @@ class SecureStorageService {
   static const String keyAppOpenAdLastShownTimestamp =
       'app_open_ad_last_shown_timestamp_v1';
   static const String keyAppSessionCount = 'app_session_count_v1';
+  static const String keyThemeMode = 'app_theme_mode_v1';
 
   Future writeSecureData(String key, dynamic value) async {
     final strVal = value.toString();

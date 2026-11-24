@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
@@ -107,7 +108,7 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
     return PopScope(
       canPop: true,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.scaffoldBackground,
         appBar: _buildAppBar(context, theme),
         body: SafeArea(
           child: Column(
@@ -149,13 +150,13 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context, ThemeData theme) {
     return AppBar(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.scaffoldBackground,
       elevation: 0,
       centerTitle: false,
       leading: IconButton(
-        icon: const Icon(
+        icon: Icon(
           Icons.arrow_back_rounded,
-          color: AppColors.textPrimary,
+          color: context.colors.textPrimary,
         ),
         onPressed: () {
           if (Navigator.of(context).canPop()) {
@@ -168,13 +169,13 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
       title: Text(
         'How to Use App',
         style: theme.textTheme.titleMedium?.copyWith(
-          color: AppColors.textPrimary,
+          color: context.colors.textPrimary,
           fontWeight: FontWeight.w700,
         ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+          icon: Icon(Icons.close_rounded, color: context.colors.textSecondary),
           tooltip: 'Close Guide',
           onPressed: () {
             if (Navigator.of(context).canPop()) {
@@ -209,15 +210,15 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
               duration: const Duration(milliseconds: 250),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.white,
+                color: isSelected ? context.colors.primary : context.colors.cardBackground,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.borderColor,
+                  color: isSelected ? context.colors.primary : context.colors.cardBorder,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.25),
+                          color: context.colors.primary.withValues(alpha: 0.25),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -230,7 +231,7 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
                   Icon(
                     item.tabIcon,
                     size: 16,
-                    color: isSelected ? AppColors.white : AppColors.textSecondary,
+                    color: isSelected ? Colors.white : context.colors.textSecondary,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -238,7 +239,7 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? AppColors.white : AppColors.textPrimary,
+                      color: isSelected ? Colors.white : context.colors.textPrimary,
                     ),
                   ),
                 ],
@@ -268,15 +269,15 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primaryBackground,
+              color: context.colors.primaryBackground,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               data.topicBadge,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: AppColors.primaryDark,
+                color: context.colors.primary,
                 letterSpacing: 0.6,
               ),
             ),
@@ -288,7 +289,7 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
           Text(
             data.title,
             style: theme.textTheme.titleLarge?.copyWith(
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               fontWeight: FontWeight.w800,
               height: 1.25,
             ),
@@ -300,7 +301,7 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
           Text(
             data.subtitle,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               height: 1.4,
             ),
           ),
@@ -317,9 +318,9 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(AppDimens.dimen16),
             decoration: BoxDecoration(
-              color: AppColors.white,
+              color: context.colors.cardBackground,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.borderColor),
+              border: Border.all(color: context.colors.cardBorder),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.03),
@@ -333,16 +334,16 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.format_list_numbered_rounded,
                       size: 20,
-                      color: AppColors.primary,
+                      color: context.colors.primary,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Step-by-Step Instructions',
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -363,19 +364,19 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
                           height: 22,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryBackground,
+                            color: context.colors.primaryBackground,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppColors.primaryLight,
+                              color: context.colors.primaryLight,
                               width: 1.2,
                             ),
                           ),
                           child: Text(
                             '$stepNumber',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primaryDark,
+                              color: context.colors.primary,
                             ),
                           ),
                         ),
@@ -383,9 +384,9 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
                         Expanded(
                           child: Text(
                             stepText,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textPrimary,
+                              color: context.colors.textPrimary,
                               height: 1.4,
                             ),
                           ),
@@ -405,26 +406,36 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(AppDimens.dimen14),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF8E1), // soft warm amber
+              color: context.isDarkMode
+                  ? context.colors.elevatedSurface
+                  : const Color(0xFFFFF8E1), // soft warm amber
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFFFE082)),
+              border: Border.all(
+                color: context.isDarkMode
+                    ? context.colors.cardBorder
+                    : const Color(0xFFFFE082),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.lightbulb_outline_rounded,
-                  color: Color(0xFFF57F17),
+                  color: context.isDarkMode
+                      ? context.colors.primary
+                      : const Color(0xFFF57F17),
                   size: 20,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     data.proTip,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF5D4037),
+                      color: context.isDarkMode
+                          ? context.colors.textSecondary
+                          : const Color(0xFF5D4037),
                       height: 1.45,
                     ),
                   ),
@@ -446,8 +457,8 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
         vertical: AppDimens.dimen12,
       ),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        border: const Border(top: BorderSide(color: AppColors.borderColor)),
+        color: context.colors.cardBackground,
+        border: Border(top: BorderSide(color: context.colors.cardBorder)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -472,7 +483,7 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
                   width: isCurrent ? 24 : 7,
                   height: 7,
                   decoration: BoxDecoration(
-                    color: isCurrent ? AppColors.primary : AppColors.borderColor,
+                    color: isCurrent ? context.colors.primary : context.colors.cardBorder,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -491,19 +502,19 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
                   flex: 2,
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.borderColor),
+                      side: BorderSide(color: context.colors.cardBorder),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                     onPressed: () => _goToPage(_currentPage - 1),
-                    child: const Text(
+                    child: Text(
                       'Back',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ),
@@ -521,7 +532,7 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
                   borderRadius: AppDimens.dimen12,
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   textStyle: theme.textTheme.titleSmall?.copyWith(
-                    color: AppColors.white,
+                    color: Colors.white,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.3,
                   ),

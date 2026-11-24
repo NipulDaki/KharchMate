@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kharch_mate/di/service_locator.dart';
-import 'package:kharch_mate/resources/app_colors.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
@@ -57,8 +57,9 @@ class CoachMarkHelper {
               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               padding: const EdgeInsets.all(AppDimens.dimen16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.colors.cardBackground,
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: context.colors.cardBorder),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.25),
@@ -81,27 +82,27 @@ class CoachMarkHelper {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryBackground,
+                          color: context.colors.primaryBackground,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           'STEP $stepIndex OF $totalSteps',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primaryDark,
+                            color: context.colors.primary,
                             letterSpacing: 0.6,
                           ),
                         ),
                       ),
                       GestureDetector(
                         onTap: () => controller.skip(),
-                        child: const Text(
+                        child: Text(
                           'Skip Tour',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textHint,
+                            color: context.colors.textHint,
                           ),
                         ),
                       ),
@@ -114,16 +115,16 @@ class CoachMarkHelper {
                   Row(
                     children: [
                       if (icon != null) ...[
-                        Icon(icon, size: 20, color: AppColors.primary),
+                        Icon(icon, size: 20, color: context.colors.primary),
                         const SizedBox(width: 8),
                       ],
                       Expanded(
                         child: Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
+                            color: context.colors.textPrimary,
                             height: 1.25,
                           ),
                         ),
@@ -136,9 +137,9 @@ class CoachMarkHelper {
                   // Description
                   Text(
                     description,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                       height: 1.4,
                     ),
                   ),
@@ -158,12 +159,12 @@ class CoachMarkHelper {
                               vertical: 6,
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Previous',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ),
@@ -178,7 +179,7 @@ class CoachMarkHelper {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: context.colors.primary,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,

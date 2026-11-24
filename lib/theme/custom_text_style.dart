@@ -136,4 +136,26 @@ class CustomTextStyle {
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
   );
+
+  /// Dynamically builds a [TextTheme] with all font sizes and weights
+  /// mapped to the provided [textColor] (supporting Light and Dark themes).
+  static TextTheme buildTextTheme(Color textColor) {
+    return TextTheme(
+      displayLarge: displayLarge.copyWith(color: textColor),
+      displayMedium: displayMedium.copyWith(color: textColor),
+      displaySmall: displaySmall.copyWith(color: textColor),
+      headlineLarge: headlineLarge.copyWith(color: textColor),
+      headlineMedium: headlineMedium.copyWith(color: textColor),
+      headlineSmall: headlineSmall.copyWith(color: textColor),
+      titleLarge: titleLarge.copyWith(color: textColor),
+      titleMedium: titleMedium.copyWith(color: textColor),
+      titleSmall: titleSmall.copyWith(color: textColor),
+      bodyLarge: bodyLarge.copyWith(color: textColor),
+      bodyMedium: bodyMedium.copyWith(color: textColor),
+      bodySmall: bodySmall.copyWith(color: textColor),
+      labelLarge: labelLarge.copyWith(color: textColor),
+      labelMedium: labelMedium.copyWith(color: textColor),
+      labelSmall: labelSmall.copyWith(color: textColor),
+    );
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
@@ -9,10 +10,10 @@ class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
 
   void _copyEmail(BuildContext context) {
-    Clipboard.setData(const ClipboardData(text: 'manavinfotech8@gmail.com'));
+    Clipboard.setData(const ClipboardData(text: 'supportnexoralab@gmail.com'));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Email copied to clipboard: manavinfotech8@gmail.com'),
+        content: Text('Email copied to clipboard: supportnexoralab@gmail.com'),
         backgroundColor: AppColors.primary,
         duration: Duration(seconds: 2),
       ),
@@ -24,21 +25,21 @@ class HelpSupportScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.scaffoldBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_rounded,
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Help & Support',
           style: theme.textTheme.titleLarge?.copyWith(
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -58,9 +59,9 @@ class HelpSupportScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppDimens.dimen20),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: context.colors.cardBackground,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderColor),
+                  border: Border.all(color: context.colors.cardBorder),
                 ),
                 child: Row(
                   children: [
@@ -68,12 +69,12 @@ class HelpSupportScreen extends StatelessWidget {
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryBackground,
+                        color: context.colors.primaryBackground,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.help_outline_rounded,
-                        color: AppColors.primary,
+                        color: context.colors.primary,
                         size: 28,
                       ),
                     ),
@@ -86,15 +87,15 @@ class HelpSupportScreen extends StatelessWidget {
                             'Support & FAQs',
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: context.colors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: AppDimens.dimen5),
-                          const Text(
+                          Text(
                             "We're here to help with any issues or questions about KharchMate.",
                             style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                               height: 1.4,
                             ),
                           ),
@@ -112,14 +113,10 @@ class HelpSupportScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppDimens.dimen16),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: context.colors.primaryBackground,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.primaryLight.withValues(alpha: 0.5),
+                    color: context.colors.primaryLight.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
@@ -128,7 +125,7 @@ class HelpSupportScreen extends StatelessWidget {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
+                        color: context.colors.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -142,20 +139,20 @@ class HelpSupportScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Visual App Tutorial',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: context.colors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 3),
-                          const Text(
+                          Text(
                             'Step-by-step interactive guide for categories, income, expenses & budgets.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -166,7 +163,7 @@ class HelpSupportScreen extends StatelessWidget {
                                 extra: true,
                               );
                             },
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
@@ -174,14 +171,14 @@ class HelpSupportScreen extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.primaryDark,
+                                    color: context.colors.primary,
                                   ),
                                 ),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Icon(
                                   Icons.arrow_forward_rounded,
                                   size: 14,
-                                  color: AppColors.primaryDark,
+                                  color: context.colors.primary,
                                 ),
                               ],
                             ),
@@ -197,6 +194,7 @@ class HelpSupportScreen extends StatelessWidget {
 
               // Section Title: Frequently Asked Questions
               _buildSectionTitle(
+                context: context,
                 icon: Icons.question_answer_outlined,
                 title: 'Frequently Asked Questions',
               ),
@@ -212,13 +210,13 @@ class HelpSupportScreen extends StatelessWidget {
                 content: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStep(1, 'Tap the "+" button located in the center of the bottom navigation bar.'),
-                    _buildStep(2, 'Select Expense or Income at the top toggle.'),
-                    _buildStep(3, 'Enter the Amount in your chosen currency.'),
-                    _buildStep(4, 'Choose a Category (e.g., Food, Shopping, Salary, Bills).'),
-                    _buildStep(5, 'Select your Payment Mode (Cash, UPI, Card, Net Banking).'),
-                    _buildStep(6, 'Pick the Date & Time (defaults to today) and optionally add a Note.'),
-                    _buildStep(7, 'Tap "Save Transaction". Your records and dashboard update instantly!'),
+                    _buildStep(context, 1, 'Tap the "+" button located in the center of the bottom navigation bar.'),
+                    _buildStep(context, 2, 'Select Expense or Income at the top toggle.'),
+                    _buildStep(context, 3, 'Enter the Amount in your chosen currency.'),
+                    _buildStep(context, 4, 'Choose a Category (e.g., Food, Shopping, Salary, Bills).'),
+                    _buildStep(context, 5, 'Select your Payment Mode (Cash, UPI, Card, Net Banking).'),
+                    _buildStep(context, 6, 'Pick the Date & Time (defaults to today) and optionally add a Note.'),
+                    _buildStep(context, 7, 'Tap "Save Transaction". Your records and dashboard update instantly!'),
                   ],
                 ),
               ),
@@ -233,32 +231,32 @@ class HelpSupportScreen extends StatelessWidget {
                 content: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Editing a Transaction:',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    _buildStep(1, 'Go to the Transactions tab from the bottom navigation (or tap any transaction under Recent Transactions on the Dashboard).'),
-                    _buildStep(2, 'Tap the transaction to open the Transaction Details screen.'),
-                    _buildStep(3, 'Tap the "Edit" button at the bottom.'),
-                    _buildStep(4, 'Update any field (amount, category, payment mode, date, or note) and tap "Save Changes".'),
+                    _buildStep(context, 1, 'Go to the Transactions tab from the bottom navigation (or tap any transaction under Recent Transactions on the Dashboard).'),
+                    _buildStep(context, 2, 'Tap the transaction to open the Transaction Details screen.'),
+                    _buildStep(context, 3, 'Tap the "Edit" button at the bottom.'),
+                    _buildStep(context, 4, 'Update any field (amount, category, payment mode, date, or note) and tap "Save Changes".'),
                     const SizedBox(height: 10),
-                    const Text(
+                    Text(
                       'Deleting a Transaction:',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: AppColors.expense,
+                        color: context.colors.expense,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    _buildStep(1, 'Open the Transaction Details screen.'),
-                    _buildStep(2, 'Tap the "Delete Transaction" button at the bottom.'),
-                    _buildStep(3, 'Confirm in the prompt to permanently remove it from your records.'),
+                    _buildStep(context, 1, 'Open the Transaction Details screen.'),
+                    _buildStep(context, 2, 'Tap the "Delete Transaction" button at the bottom.'),
+                    _buildStep(context, 3, 'Confirm in the prompt to permanently remove it from your records.'),
                   ],
                 ),
               ),
@@ -273,19 +271,20 @@ class HelpSupportScreen extends StatelessWidget {
                 content: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'You can manage categories in two ways:',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _buildBullet('From Settings', 'Go to Settings → Categories, switch between Expense and Income tabs, and tap "+ Add Category".'),
-                    _buildBullet('While Adding a Transaction', 'Scroll to the end of the categories list and tap the "+ Add" chip.'),
+                    _buildBullet(context, 'From Settings', 'Go to Settings → Categories, switch between Expense and Income tabs, and tap "+ Add Category".'),
+                    _buildBullet(context, 'While Adding a Transaction', 'Scroll to the end of the categories list and tap the "+ Add" chip.'),
                     const SizedBox(height: 8),
                     _buildParagraph(
+                      context,
                       'Customize your category with a unique name, an icon from the icon selector, and a custom color. You can edit or delete your custom categories anytime from the Categories page.',
                     ),
                   ],
@@ -300,6 +299,7 @@ class HelpSupportScreen extends StatelessWidget {
                 icon: Icons.wifi_off_rounded,
                 question: 'Does KharchMate work offline without internet?',
                 content: _buildParagraph(
+                  context,
                   'Yes! KharchMate is built completely offline-first. All your expenses, incomes, categories, and settings are stored locally on your device in a secure SQLite database. No internet or cellular data is ever required to manage your finances.',
                 ),
               ),
@@ -312,6 +312,7 @@ class HelpSupportScreen extends StatelessWidget {
                 icon: Icons.person_outline_rounded,
                 question: 'Do I need to sign up or create an account?',
                 content: _buildParagraph(
+                  context,
                   'No. KharchMate works immediately with zero signup, passwords, or cloud accounts. Your name and email address are kept strictly on your local device solely for personalized display.',
                 ),
               ),
@@ -326,10 +327,10 @@ class HelpSupportScreen extends StatelessWidget {
                 content: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStep(1, 'Go to the Settings tab in the bottom navigation.'),
-                    _buildStep(2, 'Tap on Currency.'),
-                    _buildStep(3, 'Select your preferred currency (INR ₹, USD \$, EUR €, GBP £, CAD C\$, AUD A\$, AED د.إ, JPY ¥).'),
-                    _buildStep(4, 'All amounts, balances, and reports across KharchMate immediately update to the new currency symbol.'),
+                    _buildStep(context, 1, 'Go to the Settings tab in the bottom navigation.'),
+                    _buildStep(context, 2, 'Tap on Currency.'),
+                    _buildStep(context, 3, 'Select your preferred currency (INR ₹, USD \$, EUR €, GBP £, CAD C\$, AUD A\$, AED د.إ, JPY ¥).'),
+                    _buildStep(context, 4, 'All amounts, balances, and reports across KharchMate immediately update to the new currency symbol.'),
                   ],
                 ),
               ),
@@ -342,6 +343,7 @@ class HelpSupportScreen extends StatelessWidget {
                 icon: Icons.insert_chart_outlined_rounded,
                 question: 'Where can I view my spending reports and trends?',
                 content: _buildParagraph(
+                  context,
                   'Tap the "Reports" tab in the bottom navigation bar. You will find interactive category breakdown charts, top spending categories ranked with percentages, income vs. expense balance, and monthly financial summaries.',
                 ),
               ),
@@ -354,6 +356,7 @@ class HelpSupportScreen extends StatelessWidget {
                 icon: Icons.delete_sweep_outlined,
                 question: 'What happens if I uninstall the app or clear app data?',
                 content: _buildParagraph(
+                  context,
                   'Because KharchMate stores all data 100% locally on your physical device for complete privacy, deleting or uninstalling the app or clearing its storage in your device settings will permanently erase your local database. Please keep note of your key summaries before resetting your device.',
                 ),
               ),
@@ -366,6 +369,7 @@ class HelpSupportScreen extends StatelessWidget {
                 icon: Icons.lock_outline_rounded,
                 question: 'Is my financial data private and secure?',
                 content: _buildParagraph(
+                  context,
                   'Yes, absolutely. Your records are never uploaded or synced to external servers, nor are they sold to any third party. Your financial data belongs exclusively to you on your device. Please read our Privacy Policy in Settings for full details.',
                 ),
               ),
@@ -377,9 +381,9 @@ class HelpSupportScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppDimens.dimen20),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: context.colors.cardBackground,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderColor),
+                  border: Border.all(color: context.colors.cardBorder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,32 +394,32 @@ class HelpSupportScreen extends StatelessWidget {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryBackground,
+                            color: context.colors.primaryBackground,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.mail_outline_rounded,
-                            color: AppColors.primary,
+                            color: context.colors.primary,
                             size: 20,
                           ),
                         ),
                         const SizedBox(width: AppDimens.dimen12),
-                        const Text(
+                        Text(
                           'Contact Us',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: context.colors.textPrimary,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: AppDimens.dimen12),
-                    const Text(
+                    Text(
                       'Have questions, feedback, or need help with a bug? Reach out to our support team directly:',
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         height: 1.5,
                       ),
                     ),
@@ -429,45 +433,45 @@ class HelpSupportScreen extends StatelessWidget {
                           vertical: AppDimens.dimen12,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryBackground,
+                          color: context.colors.primaryBackground,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.3),
+                            color: context.colors.primary.withValues(alpha: 0.3),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(
                               Icons.email_outlined,
                               size: 18,
-                              color: AppColors.primary,
+                              color: context.colors.primary,
                             ),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'manavinfotech8@gmail.com',
+                                'supportnexoralab@gmail.com',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryDark,
+                                  color: context.colors.primary,
                                 ),
                               ),
                             ),
                             Icon(
                               Icons.copy_rounded,
                               size: 16,
-                              color: AppColors.primary,
+                              color: context.colors.primary,
                             ),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(height: AppDimens.dimen10),
-                    const Text(
+                    Text(
                       'We typically respond within 24–48 hours.',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textHint,
+                        color: context.colors.textHint,
                       ),
                     ),
                   ],
@@ -482,26 +486,30 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle({required IconData icon, required String title}) {
+  Widget _buildSectionTitle({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+  }) {
     return Row(
       children: [
         Container(
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: const Color(0xFFF0F4F8),
+            color: context.colors.elevatedSurface,
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Icon(icon, size: 16, color: AppColors.textPrimary),
+          child: Icon(icon, size: 16, color: context.colors.textPrimary),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
         ),
@@ -518,9 +526,9 @@ class HelpSupportScreen extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: context.colors.cardBackground,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: context.colors.cardBorder),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(
@@ -542,22 +550,22 @@ class HelpSupportScreen extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFF0F4F8),
+              color: context.colors.elevatedSurface,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: AppColors.textPrimary),
+            child: Icon(icon, size: 18, color: context.colors.textPrimary),
           ),
           title: Text(
             question,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14.5,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           children: [
-            const Divider(height: 1, color: AppColors.dividerColor),
+            Divider(height: 1, color: context.colors.divider),
             const SizedBox(height: 12),
             content,
           ],
@@ -566,7 +574,7 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStep(int stepNumber, String text) {
+  Widget _buildStep(BuildContext context, int stepNumber, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -576,14 +584,14 @@ class HelpSupportScreen extends StatelessWidget {
             width: 20,
             height: 20,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
+            decoration: BoxDecoration(
+              color: context.colors.primary,
               shape: BoxShape.circle,
             ),
             child: Text(
               '$stepNumber',
               style: const TextStyle(
-                color: AppColors.white,
+                color: Colors.white,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
@@ -593,10 +601,10 @@ class HelpSupportScreen extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13.5,
                 height: 1.45,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ),
@@ -605,7 +613,7 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBullet(String title, String description) {
+  Widget _buildBullet(BuildContext context, String title, String description) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -615,26 +623,26 @@ class HelpSupportScreen extends StatelessWidget {
             margin: const EdgeInsets.only(top: 6, right: 10),
             width: 6,
             height: 6,
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
+            decoration: BoxDecoration(
+              color: context.colors.primary,
               shape: BoxShape.circle,
             ),
           ),
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13.5,
                   height: 1.45,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                   fontFamily: 'Poppins',
                 ),
                 children: [
                   TextSpan(
                     text: '$title: ',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   TextSpan(text: description),
@@ -647,13 +655,13 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildParagraph(String text) {
+  Widget _buildParagraph(BuildContext context, String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13.5,
         height: 1.5,
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
     );
   }

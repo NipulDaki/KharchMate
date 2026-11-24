@@ -156,14 +156,52 @@ class _DashboardBannerAdWidgetState extends State<DashboardBannerAdWidget> {
     }
 
     if (!_adService!.isRewardedAdReady) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Video ad is preparing. Please try again in a few seconds.'),
-          backgroundColor: AppColors.primary,
-          duration: Duration(seconds: 2),
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppColors.primary),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading video ad...',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       );
-      _adService!.loadRewardedAd();
+
+      _adService!.loadRewardedAd(
+        onLoaded: () {
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+            _showRewardedAdPrompt();
+          }
+        },
+        onFailed: (error) {
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Video ad could not be loaded. Please check your internet.'),
+                backgroundColor: AppColors.expense,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        },
+      );
       return;
     }
 

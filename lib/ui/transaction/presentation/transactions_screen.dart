@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
@@ -159,10 +160,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.white,
-              onSurface: AppColors.textPrimary,
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: context.colors.primary,
+              onPrimary: Theme.of(context).colorScheme.onPrimary,
+              surface: context.colors.cardBackground,
+              onSurface: context.colors.textPrimary,
             ),
           ),
           child: child!,
@@ -176,13 +178,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Future<void> _showDateFilterSheet() async {
+    final colors = context.colors;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
 
     await showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.white,
+      backgroundColor: colors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -199,7 +202,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.borderColor,
+                      color: colors.cardBorder,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -208,12 +211,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Filter by Date',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: colors.textPrimary,
                       ),
                     ),
                     if (_selectedDate != null)
@@ -222,10 +225,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           Navigator.of(ctx).pop();
                           _clearDateFilter();
                         },
-                        child: const Text(
+                        child: Text(
                           'Clear Date',
                           style: TextStyle(
-                            color: AppColors.expense,
+                            color: colors.expense,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -239,93 +242,93 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: colors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.today_rounded, color: AppColors.primary),
+                    child: Icon(Icons.today_rounded, color: colors.primary),
                   ),
-                  title: const Text(
+                  title: Text(
                     'Today',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                   subtitle: Text(
                     DateFormat('dd MMM yyyy').format(today),
-                    style: const TextStyle(fontSize: 12, color: AppColors.textHint),
+                    style: TextStyle(fontSize: 12, color: colors.textHint),
                   ),
                   trailing: _selectedDate != null &&
                           _selectedDate!.year == today.year &&
                           _selectedDate!.month == today.month &&
                           _selectedDate!.day == today.day
-                      ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                      ? Icon(Icons.check_circle_rounded, color: colors.primary)
                       : null,
                   onTap: () {
                     Navigator.of(ctx).pop();
                     _onDateSelected(today);
                   },
                 ),
-                const Divider(height: 1, color: AppColors.borderColor),
+                Divider(height: 1, color: colors.divider),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: colors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.history_rounded, color: AppColors.primary),
+                    child: Icon(Icons.history_rounded, color: colors.primary),
                   ),
-                  title: const Text(
+                  title: Text(
                     'Yesterday',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                   subtitle: Text(
                     DateFormat('dd MMM yyyy').format(yesterday),
-                    style: const TextStyle(fontSize: 12, color: AppColors.textHint),
+                    style: TextStyle(fontSize: 12, color: colors.textHint),
                   ),
                   trailing: _selectedDate != null &&
                           _selectedDate!.year == yesterday.year &&
                           _selectedDate!.month == yesterday.month &&
                           _selectedDate!.day == yesterday.day
-                      ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                      ? Icon(Icons.check_circle_rounded, color: colors.primary)
                       : null,
                   onTap: () {
                     Navigator.of(ctx).pop();
                     _onDateSelected(yesterday);
                   },
                 ),
-                const Divider(height: 1, color: AppColors.borderColor),
+                Divider(height: 1, color: colors.divider),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: colors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
+                    child: Icon(Icons.calendar_month_rounded, color: colors.primary),
                   ),
-                  title: const Text(
+                  title: Text(
                     'Pick a Date from Calendar',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                   subtitle: Text(
                     _selectedDate != null
                         ? 'Selected: ${DateFormat('dd MMM yyyy').format(_selectedDate!)}'
                         : 'Choose any specific day',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textHint),
+                    style: TextStyle(fontSize: 12, color: colors.textHint),
                   ),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
+                  trailing: Icon(Icons.chevron_right_rounded, color: colors.textHint),
                   onTap: () async {
                     Navigator.of(ctx).pop();
                     await _selectSpecificDate();
@@ -371,7 +374,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     await showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.white,
+      backgroundColor: context.colors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -412,7 +415,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           width: 40,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: AppColors.borderColor,
+                            color: context.colors.cardBorder,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -421,12 +424,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'Filter & Sort',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: context.colors.textPrimary,
                             ),
                           ),
                           TextButton(
@@ -437,10 +440,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 tempDate = null;
                               });
                             },
-                            child: const Text(
+                            child: Text(
                               'Reset',
                               style: TextStyle(
-                                color: AppColors.expense,
+                                color: context.colors.expense,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -448,12 +451,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Filter by Date',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -488,10 +491,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 builder: (context, child) {
                                   return Theme(
                                     data: Theme.of(context).copyWith(
-                                      colorScheme: const ColorScheme.light(
-                                        primary: AppColors.primary,
-                                        onPrimary: AppColors.white,
-                                        onSurface: AppColors.textPrimary,
+                                      colorScheme: Theme.of(context).colorScheme.copyWith(
+                                        primary: context.colors.primary,
+                                        onPrimary: Theme.of(context).colorScheme.onPrimary,
+                                        surface: context.colors.cardBackground,
+                                        onSurface: context.colors.textPrimary,
                                       ),
                                     ),
                                     child: child!,
@@ -506,12 +510,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Sort by',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -547,12 +551,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       ),
                       if (categories.isNotEmpty) ...[
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           'Filter by Category',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: context.colors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -572,20 +576,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                       fontSize: 12,
                                       color: isAll
                                           ? AppColors.white
-                                          : AppColors.textPrimary,
+                                          : context.colors.textPrimary,
                                       fontWeight: isAll
                                           ? FontWeight.w700
                                           : FontWeight.w500,
                                     ),
                                   ),
                                   selected: isAll,
-                                  selectedColor: AppColors.primary,
-                                  backgroundColor: AppColors.white,
+                                  selectedColor: context.colors.primary,
+                                  backgroundColor: context.colors.cardBackground,
                                   surfaceTintColor: Colors.transparent,
                                   side: BorderSide(
                                     color: isAll
-                                        ? AppColors.primary
-                                        : AppColors.borderColor,
+                                        ? context.colors.primary
+                                        : context.colors.cardBorder,
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
@@ -604,20 +608,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                     fontSize: 12,
                                     color: isSel
                                         ? AppColors.white
-                                        : AppColors.textPrimary,
+                                        : context.colors.textPrimary,
                                     fontWeight: isSel
                                         ? FontWeight.w700
                                         : FontWeight.w500,
                                   ),
                                 ),
                                 selected: isSel,
-                                selectedColor: AppColors.primary,
-                                backgroundColor: AppColors.white,
+                                selectedColor: context.colors.primary,
+                                backgroundColor: context.colors.cardBackground,
                                 surfaceTintColor: Colors.transparent,
                                 side: BorderSide(
                                   color: isSel
-                                      ? AppColors.primary
-                                      : AppColors.borderColor,
+                                      ? context.colors.primary
+                                      : context.colors.cardBorder,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
@@ -636,7 +640,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         height: 48,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: context.colors.primary,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -688,16 +692,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         label,
         style: TextStyle(
           fontSize: 12,
-          color: isSelected ? AppColors.white : AppColors.textPrimary,
+          color: isSelected ? AppColors.white : context.colors.textPrimary,
           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
         ),
       ),
       selected: isSelected,
-      selectedColor: AppColors.primary,
-      backgroundColor: AppColors.white,
+      selectedColor: context.colors.primary,
+      backgroundColor: context.colors.cardBackground,
       surfaceTintColor: Colors.transparent,
       side: BorderSide(
-        color: isSelected ? AppColors.primary : AppColors.borderColor,
+        color: isSelected ? context.colors.primary : context.colors.cardBorder,
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -718,16 +722,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         label,
         style: TextStyle(
           fontSize: 12,
-          color: isSelected ? AppColors.white : AppColors.textPrimary,
+          color: isSelected ? AppColors.white : context.colors.textPrimary,
           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
         ),
       ),
       selected: isSelected,
-      selectedColor: AppColors.primary,
-      backgroundColor: AppColors.white,
+      selectedColor: context.colors.primary,
+      backgroundColor: context.colors.cardBackground,
       surfaceTintColor: Colors.transparent,
       side: BorderSide(
-        color: isSelected ? AppColors.primary : AppColors.borderColor,
+        color: isSelected ? context.colors.primary : context.colors.cardBorder,
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -749,15 +753,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = context.colors;
     final monthText = _selectedMonth != null
         ? DateFormat('MMMM yyyy').format(_selectedMonth!)
         : 'All Months';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.scaffoldBackground,
       bottomNavigationBar: _buildBottomNav(context),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
+        backgroundColor: colors.primary,
         shape: const CircleBorder(),
         elevation: 4,
         onPressed: () async {
@@ -773,7 +778,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         child: RefreshIndicator(
-          color: AppColors.primary,
+          color: colors.primary,
           onRefresh: _loadTransactions,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -789,7 +794,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 child: Text(
                   'Transactions',
                   style: theme.textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textPrimary,
+                    color: colors.textPrimary,
                     fontWeight: FontWeight.w800,
                     fontSize: 24,
                   ),
@@ -837,13 +842,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: _selectedDate != null
-                                ? AppColors.primary.withValues(alpha: 0.08)
-                                : AppColors.white,
+                                ? colors.primary.withValues(alpha: 0.12)
+                                : colors.cardBackground,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: _selectedDate != null
-                                  ? AppColors.primary
-                                  : AppColors.borderColor,
+                                  ? colors.primary
+                                  : colors.cardBorder,
                             ),
                           ),
                           child: Row(
@@ -854,8 +859,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                     : Icons.calendar_today_outlined,
                                 size: 16,
                                 color: _selectedDate != null
-                                    ? AppColors.primary
-                                    : AppColors.textPrimary,
+                                    ? colors.primary
+                                    : colors.textPrimary,
                               ),
                               const SizedBox(width: 10),
                               Expanded(
@@ -867,8 +872,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: _selectedDate != null
-                                        ? AppColors.primary
-                                        : AppColors.textPrimary,
+                                        ? colors.primary
+                                        : colors.textPrimary,
                                   ),
                                 ),
                               ),
@@ -876,20 +881,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 InkWell(
                                   onTap: _clearDateFilter,
                                   borderRadius: BorderRadius.circular(12),
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(2.0),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(2.0),
                                     child: Icon(
                                       Icons.close_rounded,
                                       size: 18,
-                                      color: AppColors.textSecondary,
+                                      color: colors.textSecondary,
                                     ),
                                   ),
                                 )
                               else
-                                const Icon(
+                                Icon(
                                   Icons.keyboard_arrow_down_rounded,
                                   size: 20,
-                                  color: AppColors.textSecondary,
+                                  color: colors.textSecondary,
                                 ),
                             ],
                           ),
@@ -905,13 +910,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: _selectedDate != null
-                              ? AppColors.primary
-                              : AppColors.white,
+                              ? colors.primary
+                              : colors.cardBackground,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _selectedDate != null
-                                ? AppColors.primary
-                                : AppColors.borderColor,
+                                ? colors.primary
+                                : colors.cardBorder,
                           ),
                         ),
                         child: Icon(
@@ -919,7 +924,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           size: 20,
                           color: _selectedDate != null
                               ? AppColors.white
-                              : AppColors.textPrimary,
+                              : colors.textPrimary,
                         ),
                       ),
                     ),
@@ -931,14 +936,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppColors.white,
+                          color: colors.cardBackground,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _selectedCategoryFilter != null ||
                                     _sortOrder != 'newest' ||
                                     _selectedDate != null
-                                ? AppColors.primary
-                                : AppColors.borderColor,
+                                ? colors.primary
+                                : colors.cardBorder,
                           ),
                         ),
                         child: Icon(
@@ -947,8 +952,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           color: _selectedCategoryFilter != null ||
                                   _sortOrder != 'newest' ||
                                   _selectedDate != null
-                              ? AppColors.primary
-                              : AppColors.textPrimary,
+                              ? colors.primary
+                              : colors.textPrimary,
                         ),
                       ),
                     ),
@@ -984,11 +989,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _buildTypeSegmentTabs() {
+    final colors = context.colors;
     return Container(
       height: 42,
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F4F9),
+        color: colors.inputFill,
         borderRadius: BorderRadius.circular(21),
+        border: Border.all(color: colors.cardBorder),
       ),
       padding: const EdgeInsets.all(3),
       child: Row(
@@ -1002,6 +1009,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _buildSegmentPill(String label, TransactionType? type) {
+    final colors = context.colors;
     final isSelected = _selectedType == type;
 
     return Expanded(
@@ -1009,7 +1017,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         onTap: () => _onTypeFilterChanged(type),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : AppColors.transparent,
+            color: isSelected ? colors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
           ),
           alignment: Alignment.center,
@@ -1018,7 +1026,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-              color: isSelected ? AppColors.white : AppColors.textPrimary,
+              color: isSelected ? AppColors.white : colors.textPrimary,
             ),
           ),
         ),
@@ -1027,37 +1035,39 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _buildSearchBar() {
+    final colors = context.colors;
     return Container(
       height: 46,
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F4F9),
+        color: colors.inputFill,
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.inputBorder),
       ),
       child: TextField(
         controller: _searchController,
         onChanged: _onSearchChanged,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
+          color: colors.textPrimary,
         ),
         decoration: InputDecoration(
           hintText: 'Search transactions...',
-          hintStyle: const TextStyle(
+          hintStyle: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w400,
-            color: AppColors.textHint,
+            color: colors.textHint,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search_rounded,
-            color: AppColors.textHint,
+            color: colors.textHint,
             size: 22,
           ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
-                    color: AppColors.textHint,
+                    color: colors.textHint,
                     size: 18,
                   ),
                   onPressed: () {
@@ -1077,6 +1087,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _buildTransactionItem(TransactionItem tx) {
+    final colors = context.colors;
     final isIncome = tx.type.isIncome;
     final amountFormatted = tx.formattedAmount(currencySymbol: _currencySymbol);
 
@@ -1086,9 +1097,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       child: Container(
         padding: const EdgeInsets.all(AppDimens.dimen12),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: colors.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderColor),
+          border: Border.all(color: colors.cardBorder),
         ),
         child: Row(
           children: [
@@ -1097,7 +1108,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: tx.categoryColorValue.withValues(alpha: 0.15),
+                color: tx.categoryColorValue.withValues(
+                  alpha: context.isDarkMode ? 0.22 : 0.15,
+                ),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -1114,18 +1127,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 children: [
                   Text(
                     tx.displayTitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     tx.formattedDate,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textHint,
+                      color: colors.textHint,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -1138,7 +1151,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: isIncome ? AppColors.income : AppColors.expense,
+                color: isIncome ? colors.income : colors.expense,
               ),
             ),
           ],
@@ -1148,6 +1161,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _buildEmptyState() {
+    final colors = context.colors;
     final dateFiltered = _selectedDate != null;
     return Center(
       child: Padding(
@@ -1158,16 +1172,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             Container(
               width: 80,
               height: 80,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF1F4F9),
+              decoration: BoxDecoration(
+                color: colors.inputFill,
                 shape: BoxShape.circle,
+                border: Border.all(color: colors.cardBorder),
               ),
               child: Icon(
                 dateFiltered
                     ? Icons.event_busy_rounded
                     : Icons.receipt_long_rounded,
                 size: 40,
-                color: AppColors.textHint,
+                color: colors.textHint,
               ),
             ),
             const SizedBox(height: 16),
@@ -1176,10 +1191,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ? 'No Transactions on ${DateFormat('dd MMM yyyy').format(_selectedDate!)}'
                   : 'No Transactions Found',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: colors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
@@ -1188,24 +1203,24 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ? 'There are no transactions recorded for this selected date.'
                   : 'Try changing your filters, search term, or add a new transaction.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textHint,
+                color: colors.textHint,
               ),
             ),
             if (dateFiltered) ...[
               const SizedBox(height: 16),
               TextButton.icon(
                 onPressed: _clearDateFilter,
-                icon: const Icon(
+                icon: Icon(
                   Icons.clear_rounded,
                   size: 18,
-                  color: AppColors.primary,
+                  color: colors.primary,
                 ),
-                label: const Text(
+                label: Text(
                   'Clear Date Filter',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: colors.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1221,7 +1236,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 8.0,
-      color: AppColors.white,
+      color: context.colors.bottomNavBackground,
       elevation: 8,
       child: SizedBox(
         height: 60,
@@ -1257,8 +1272,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     VoidCallback onTap,
   ) {
     final color = isSelected
-        ? AppColors.bottomNavSelected
-        : AppColors.bottomNavUnselected;
+        ? context.colors.bottomNavSelected
+        : context.colors.bottomNavUnselected;
 
     return InkWell(
       onTap: onTap,

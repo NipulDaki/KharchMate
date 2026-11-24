@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
@@ -87,35 +88,35 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Future<void> _confirmDelete(CategoryModel category) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.white,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ctx.colors.cardBackground,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Delete Category',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: ctx.colors.textPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
         content: Text(
           'Are you sure you want to delete "${category.name}"?',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: ctx.colors.textSecondary),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
               'Cancel',
-              style: TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: ctx.colors.textSecondary),
             ),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
               'Delete',
               style: TextStyle(
-                color: AppColors.expense,
+                color: ctx.colors.expense,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -156,14 +157,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     final showIncome = _selectedTab == 'All' || _selectedTab == 'Income';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.scaffoldBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_rounded,
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           onPressed: () {
             if (Navigator.of(context).canPop()) {
@@ -176,16 +177,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         title: Text(
           'Categories',
           style: theme.textTheme.titleLarge?.copyWith(
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.help_outline_rounded,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
             tooltip: 'Category Guide',
             onPressed: () {
@@ -202,7 +203,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
+        backgroundColor: context.colors.primary,
         elevation: 4,
         shape: const CircleBorder(),
         onPressed: () async {
@@ -218,7 +219,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       ? 'Category "$categoryName" added successfully.'
                       : 'Category added successfully.',
                 ),
-                backgroundColor: AppColors.income,
+                backgroundColor: context.colors.income,
                 duration: const Duration(seconds: 2),
               ),
             );
@@ -243,82 +244,82 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             _initAndLoadCategories();
           }
         },
-        child: const Icon(Icons.add, color: AppColors.white, size: 28),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
       body: RefreshIndicator(
-              color: AppColors.primary,
-              onRefresh: _initAndLoadCategories,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimens.dimen16,
-                  vertical: AppDimens.dimen12,
+        color: context.colors.primary,
+        onRefresh: _initAndLoadCategories,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimens.dimen16,
+            vertical: AppDimens.dimen12,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Filter Chips Row: [All] [Expense] [Income]
+              _buildFilterTabs(),
+
+              const SizedBox(height: AppDimens.dimen16),
+
+              // 2. Search Field
+              _buildSearchBar(),
+
+              const SizedBox(height: AppDimens.dimen20),
+
+              // 3. Expense Section
+              if (showExpense) ...[
+                _buildSectionHeader(
+                  title: 'Expense',
+                  icon: Icons.shopping_bag_outlined,
+                  iconColor: context.colors.primary,
+                  count: _filteredExpenseCategories.length,
+                  isExpanded: _isExpenseExpanded,
+                  onToggle: () {
+                    setState(() {
+                      _isExpenseExpanded = !_isExpenseExpanded;
+                    });
+                  },
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 1. Filter Chips Row: [All] [Expense] [Income]
-                    _buildFilterTabs(),
+                if (_isExpenseExpanded) ...[
+                  const SizedBox(height: AppDimens.dimen8),
+                  if (_filteredExpenseCategories.isEmpty)
+                    _buildEmptyState('No expense categories found')
+                  else
+                    ..._filteredExpenseCategories.map(_buildCategoryTile),
+                ],
+                const SizedBox(height: AppDimens.dimen20),
+              ],
 
-                    const SizedBox(height: AppDimens.dimen16),
-
-                    // 2. Search Field
-                    _buildSearchBar(),
-
-                    const SizedBox(height: AppDimens.dimen20),
-
-                    // 3. Expense Section
-                    if (showExpense) ...[
-                      _buildSectionHeader(
-                        title: 'Expense',
-                        icon: Icons.shopping_bag_outlined,
-                        iconColor: AppColors.primary,
-                        count: _filteredExpenseCategories.length,
-                        isExpanded: _isExpenseExpanded,
-                        onToggle: () {
-                          setState(() {
-                            _isExpenseExpanded = !_isExpenseExpanded;
-                          });
-                        },
-                      ),
-                      if (_isExpenseExpanded) ...[
-                        const SizedBox(height: AppDimens.dimen8),
-                        if (_filteredExpenseCategories.isEmpty)
-                          _buildEmptyState('No expense categories found')
-                        else
-                          ..._filteredExpenseCategories.map(_buildCategoryTile),
-                      ],
-                      const SizedBox(height: AppDimens.dimen20),
-                    ],
-
-                    // 4. Income Section
-                    if (showIncome) ...[
-                      _buildSectionHeader(
-                        title: 'Income',
-                        icon: Icons.account_balance_wallet_outlined,
-                        iconColor: AppColors.income,
-                        count: _filteredIncomeCategories.length,
-                        isExpanded: _isIncomeExpanded,
-                        onToggle: () {
-                          setState(() {
-                            _isIncomeExpanded = !_isIncomeExpanded;
-                          });
-                        },
-                      ),
-                      if (_isIncomeExpanded) ...[
-                        const SizedBox(height: AppDimens.dimen8),
-                        if (_filteredIncomeCategories.isEmpty)
-                          _buildEmptyState('No income categories found')
-                        else
-                          ..._filteredIncomeCategories.map(_buildCategoryTile),
-                      ],
-                    ],
-
-                    const SizedBox(height: 80), // Padding for FAB
-                  ],
+              // 4. Income Section
+              if (showIncome) ...[
+                _buildSectionHeader(
+                  title: 'Income',
+                  icon: Icons.account_balance_wallet_outlined,
+                  iconColor: context.colors.income,
+                  count: _filteredIncomeCategories.length,
+                  isExpanded: _isIncomeExpanded,
+                  onToggle: () {
+                    setState(() {
+                      _isIncomeExpanded = !_isIncomeExpanded;
+                    });
+                  },
                 ),
-              ),
-            ),
+                if (_isIncomeExpanded) ...[
+                  const SizedBox(height: AppDimens.dimen8),
+                  if (_filteredIncomeCategories.isEmpty)
+                    _buildEmptyState('No income categories found')
+                  else
+                    ..._filteredIncomeCategories.map(_buildCategoryTile),
+                ],
+              ],
+
+              const SizedBox(height: 80), // Padding for FAB
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -338,17 +339,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               decoration: BoxDecoration(
-                gradient: isSelected ? AppColors.linerGradient : null,
-                color: isSelected ? null : AppColors.white,
+                gradient: isSelected ? context.colors.linearGradient : null,
+                color: isSelected ? null : context.colors.cardBackground,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isSelected ? Colors.transparent : AppColors.borderColor,
+                  color: isSelected ? Colors.transparent : context.colors.cardBorder,
                 ),
               ),
               child: Text(
                 tab,
                 style: TextStyle(
-                  color: isSelected ? AppColors.white : AppColors.textSecondary,
+                  color: isSelected ? Colors.white : context.colors.textSecondary,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   fontSize: 14,
                 ),
@@ -363,29 +364,33 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Widget _buildSearchBar() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       child: TextField(
         controller: _searchController,
+        style: TextStyle(
+          color: context.colors.textPrimary,
+          fontSize: 14,
+        ),
         onChanged: (val) {
           setState(() => _searchQuery = val.trim());
         },
         decoration: InputDecoration(
           hintText: 'Search categories...',
-          hintStyle: const TextStyle(
-            color: AppColors.textHint,
+          hintStyle: TextStyle(
+            color: context.colors.textHint,
             fontSize: 14,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search_rounded,
-            color: AppColors.textHint,
+            color: context.colors.textHint,
             size: 20,
           ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear_rounded, size: 18, color: AppColors.textHint),
+                  icon: Icon(Icons.clear_rounded, size: 18, color: context.colors.textHint),
                   onPressed: () {
                     _searchController.clear();
                     setState(() => _searchQuery = '');
@@ -421,7 +426,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
             const Spacer(),
@@ -430,7 +435,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(width: 6),
@@ -438,7 +443,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               isExpanded
                   ? Icons.keyboard_arrow_up_rounded
                   : Icons.keyboard_arrow_down_rounded,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               size: 22,
             ),
           ],
@@ -454,9 +459,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: context.colors.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: context.colors.cardBorder),
       ),
       child: Row(
         children: [
@@ -483,18 +488,18 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               children: [
                 Text(
                   category.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   typeLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textHint,
+                    color: context.colors.textHint,
                   ),
                 ),
               ],
@@ -503,9 +508,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
           // Delete Action Button (No edit option as requested)
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.delete_outline_rounded,
-              color: AppColors.expense,
+              color: context.colors.expense,
               size: 20,
             ),
             tooltip: 'Delete Category',
@@ -523,8 +528,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       alignment: Alignment.center,
       child: Text(
         message,
-        style: const TextStyle(
-          color: AppColors.textHint,
+        style: TextStyle(
+          color: context.colors.textHint,
           fontSize: 13,
         ),
       ),

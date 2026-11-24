@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/helper/coach_mark_helper.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
@@ -254,30 +255,30 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
     final activeIcon = _iconFromKey(_selectedIconKey);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.scaffoldBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_rounded,
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Add Category',
           style: theme.textTheme.titleLarge?.copyWith(
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.help_outline_rounded,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
             tooltip: 'Interactive Tour',
             onPressed: () {
@@ -330,7 +331,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                     Text(
                       'Name',
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -338,26 +339,30 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                     Container(
                       key: _keyNameInput,
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: context.colors.inputFill,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderColor),
+                        border: Border.all(color: context.colors.inputBorder),
                       ),
                       child: TextFormField(
                         controller: _nameController,
                         textCapitalization: TextCapitalization.words,
-                        decoration: const InputDecoration(
+                        style: TextStyle(
+                          color: context.colors.textPrimary,
+                          fontSize: 15,
+                        ),
+                        decoration: InputDecoration(
                           hintText: 'Enter category name (e.g. Food)',
                           hintStyle: TextStyle(
-                            color: AppColors.textHint,
+                            color: context.colors.textHint,
                             fontSize: 14,
                           ),
                           prefixIcon: Icon(
                             Icons.label_outline_rounded,
-                            color: AppColors.textHint,
+                            color: context.colors.textHint,
                             size: 20,
                           ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 14,
                           ),
@@ -380,7 +385,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                     Text(
                       'Type',
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -389,7 +394,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                       key: _keyTypeSelector,
                       height: 46,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0F4F8),
+                        color: context.colors.elevatedSurface,
                         borderRadius: BorderRadius.circular(24),
                       ),
                       padding: const EdgeInsets.all(4),
@@ -403,7 +408,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   gradient: _selectedType == CategoryType.expense
-                                      ? AppColors.linerGradient
+                                      ? context.colors.linearGradient
                                       : null,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -412,8 +417,8 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                                   'Expense',
                                   style: TextStyle(
                                     color: _selectedType == CategoryType.expense
-                                        ? AppColors.white
-                                        : AppColors.textSecondary,
+                                        ? Colors.white
+                                        : context.colors.textSecondary,
                                     fontWeight: _selectedType == CategoryType.expense
                                         ? FontWeight.w700
                                         : FontWeight.w500,
@@ -431,7 +436,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   gradient: _selectedType == CategoryType.income
-                                      ? AppColors.linerGradient
+                                      ? context.colors.linearGradient
                                       : null,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -440,8 +445,8 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                                   'Income',
                                   style: TextStyle(
                                     color: _selectedType == CategoryType.income
-                                        ? AppColors.white
-                                        : AppColors.textSecondary,
+                                        ? Colors.white
+                                        : context.colors.textSecondary,
                                     fontWeight: _selectedType == CategoryType.income
                                         ? FontWeight.w700
                                         : FontWeight.w500,
@@ -461,7 +466,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                     Text(
                       'Select Icon',
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -498,21 +503,21 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                                   height: double.infinity,
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? AppColors.white
-                                        : const Color(0xFFF7F9FB),
+                                        ? context.colors.cardBackground
+                                        : context.colors.elevatedSurface,
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(
                                       color: isSelected
-                                          ? AppColors.primary
-                                          : AppColors.borderColor,
+                                          ? context.colors.primary
+                                          : context.colors.cardBorder,
                                       width: isSelected ? 2 : 1,
                                     ),
                                   ),
                                   child: Icon(
                                     icon,
                                     color: isSelected
-                                        ? AppColors.primary
-                                        : AppColors.textSecondary,
+                                        ? context.colors.primary
+                                        : context.colors.textSecondary,
                                     size: 22,
                                   ),
                                 ),
@@ -522,13 +527,13 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                                     right: -4,
                                     child: Container(
                                       padding: const EdgeInsets.all(2),
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.primary,
+                                      decoration: BoxDecoration(
+                                        color: context.colors.primary,
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(
                                         Icons.check,
-                                        color: AppColors.white,
+                                        color: Colors.white,
                                         size: 10,
                                       ),
                                     ),
@@ -546,7 +551,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                     Text(
                       'Select Color',
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -595,7 +600,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                         borderRadius: 12,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         textStyle: theme.textTheme.titleMedium?.copyWith(
-                          color: AppColors.white,
+                          color: Colors.white,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),

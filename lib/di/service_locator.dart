@@ -4,9 +4,11 @@ import 'package:kharch_mate/environment/app_environment.dart';
 import 'package:kharch_mate/router/app_router.dart';
 import 'package:kharch_mate/services/ad_service.dart';
 import 'package:kharch_mate/services/analytics_service.dart';
+import 'package:kharch_mate/services/app_update_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
 import 'package:kharch_mate/services/notification_service.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
+import 'package:kharch_mate/services/theme_service.dart';
 
 final serviceLocator = GetIt.instance;
 
@@ -22,7 +24,15 @@ Future<void> setupServiceLocator({AppConfig? config}) async {
   final appDatabase = AppDatabase();
   await appDatabase.init();
 
+  final databaseService = DatabaseService(appDatabase: appDatabase);
+
   final secureStorage = SecureStorageService();
+  final themeService = ThemeService(
+    databaseService,
+    secureStorage,
+  );
+  await themeService.init();
+
   final adService = AdService(
     storageService: secureStorage,
     appConfig: appConfig,
@@ -32,16 +42,20 @@ Future<void> setupServiceLocator({AppConfig? config}) async {
   final notificationService = NotificationService();
   await notificationService.init();
 
+  final appUpdateService = AppUpdateService();
+
   serviceLocator
     // App Environment Configuration
     ..registerSingleton<AppConfig>(appConfig)
     // Analytics Service
     ..registerSingleton<AnalyticsService>(analyticsService)
+    // App Update Service
+    ..registerSingleton<AppUpdateService>(appUpdateService)
     // Database and Persistence Service
     ..registerSingleton<AppDatabase>(appDatabase)
-    ..registerLazySingleton<DatabaseService>(
-      () => DatabaseService(appDatabase: serviceLocator<AppDatabase>()),
-    )
+    ..registerSingleton<DatabaseService>(databaseService)
+    // Theme service
+    ..registerSingleton<ThemeService>(themeService)
     // Secure storage service
     ..registerSingleton<SecureStorageService>(secureStorage)
     // AdMob Ads & Reward Service

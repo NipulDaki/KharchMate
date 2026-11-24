@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
+import 'package:kharch_mate/helper/currency_helper.dart';
 import 'package:kharch_mate/models/financial_summary.dart';
 import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
@@ -49,7 +51,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     _userProfileSubscription = _dbService.onUserProfileChanged.listen((profile) {
       if (mounted && profile.currencySymbol.isNotEmpty) {
         setState(() {
-          _currencySymbol = profile.currencySymbol;
+          _currencySymbol = CurrencyHelper.normalizeSymbol(profile.currencySymbol);
         });
       }
     });
@@ -78,7 +80,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       if (mounted) {
         setState(() {
           if (user != null && user.currencySymbol.isNotEmpty) {
-            _currencySymbol = user.currencySymbol;
+            _currencySymbol = CurrencyHelper.normalizeSymbol(user.currencySymbol);
           }
           _summary = summary;
           _trends = trends;
@@ -91,12 +93,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.scaffoldBackground,
       bottomNavigationBar: _buildBottomNav(context),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
+        backgroundColor: colors.primary,
         shape: const CircleBorder(),
         elevation: 4,
         onPressed: () async {
@@ -112,7 +115,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         children: [
           SafeArea(
             child: RefreshIndicator(
-              color: AppColors.primary,
+              color: colors.primary,
               onRefresh: _loadReportData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -127,7 +130,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     Text(
                       'Reports',
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: colors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -164,11 +167,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
   // TOP SEGMENTED TABS
   // ===========================================================================
   Widget _buildSegmentTabs() {
+    final colors = context.colors;
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F4F9),
+        color: colors.inputFill,
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: colors.cardBorder),
       ),
       padding: const EdgeInsets.all(3),
       child: Row(
@@ -182,6 +187,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildSegmentItem(String label, ReportTab tab) {
+    final colors = context.colors;
     final isSelected = _selectedTab == tab;
 
     return Expanded(
@@ -193,12 +199,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
         },
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.transparent,
+            color: isSelected ? colors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.25),
+                      color: colors.primary.withValues(alpha: 0.25),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -211,7 +217,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? AppColors.white : AppColors.textSecondary,
+              color: isSelected ? AppColors.white : colors.textSecondary,
             ),
           ),
         ),
@@ -223,6 +229,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   // MONTH SELECTOR
   // ===========================================================================
   Widget _buildMonthSelector(BuildContext context) {
+    final colors = context.colors;
     final monthLabel = DateFormat('MMMM yyyy').format(_selectedDate);
 
     return InkWell(
@@ -241,35 +248,35 @@ class _ReportsScreenState extends State<ReportsScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: colors.cardBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderColor),
+          border: Border.all(color: colors.cardBorder),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.calendar_today_outlined,
                   size: 18,
-                  color: AppColors.textPrimary,
+                  color: colors.textPrimary,
                 ),
                 const SizedBox(width: 10),
                 Text(
                   monthLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: colors.textPrimary,
                   ),
                 ),
               ],
             ),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 20,
-              color: AppColors.textSecondary,
+              color: colors.textSecondary,
             ),
           ],
         ),
@@ -303,6 +310,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildSummaryCardsRow(ThemeData theme) {
+    final colors = context.colors;
     return Row(
       children: [
         // Total Income Card
@@ -310,21 +318,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
           child: Container(
             padding: const EdgeInsets.all(AppDimens.dimen14),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
+              color: colors.incomeContainer,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFDCFCE7)),
+              border: Border.all(
+                color: colors.income.withValues(alpha: 0.2),
+              ),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFDCFCE7),
+                  decoration: BoxDecoration(
+                    color: colors.income.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_upward_rounded,
-                    color: Color(0xFF16A34A),
+                    color: colors.income,
                     size: 20,
                   ),
                 ),
@@ -336,7 +346,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       Text(
                         'Total Income',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: colors.textSecondary,
                           fontSize: 12,
                         ),
                       ),
@@ -345,10 +355,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         fit: BoxFit.scaleDown,
                         child: Text(
                           _summary.formattedIncome(symbol: _currencySymbol),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF16A34A),
+                            color: colors.income,
                           ),
                         ),
                       ),
@@ -366,21 +376,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
           child: Container(
             padding: const EdgeInsets.all(AppDimens.dimen14),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF2F2),
+              color: colors.expenseContainer,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFEE2E2)),
+              border: Border.all(
+                color: colors.expense.withValues(alpha: 0.2),
+              ),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFEE2E2),
+                  decoration: BoxDecoration(
+                    color: colors.expense.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_downward_rounded,
-                    color: Color(0xFFDC2626),
+                    color: colors.expense,
                     size: 20,
                   ),
                 ),
@@ -392,7 +404,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       Text(
                         'Total Expense',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: colors.textSecondary,
                           fontSize: 12,
                         ),
                       ),
@@ -401,10 +413,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         fit: BoxFit.scaleDown,
                         child: Text(
                           _summary.formattedExpense(symbol: _currencySymbol),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFFDC2626),
+                            color: colors.expense,
                           ),
                         ),
                       ),
@@ -420,6 +432,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildSavingsCard(ThemeData theme) {
+    final colors = context.colors;
     final savingsPercent = _summary.totalIncome > 0
         ? (_summary.savings / _summary.totalIncome).clamp(0.0, 1.0)
         : 0.0;
@@ -430,21 +443,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Container(
       padding: const EdgeInsets.all(AppDimens.dimen14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
+        color: colors.savingsContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFDCFCE7)),
+        border: Border.all(
+          color: colors.savings.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: Color(0xFFDCFCE7),
+            decoration: BoxDecoration(
+              color: colors.savings.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.savings_rounded,
-              color: Color(0xFF10B981),
+              color: colors.savings,
               size: 22,
             ),
           ),
@@ -455,17 +470,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Text(
                 'Savings',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: colors.textSecondary,
                   fontSize: 12,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 _summary.formattedSavings(symbol: _currencySymbol),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF10B981),
+                  color: colors.savings,
                 ),
               ),
             ],
@@ -476,9 +491,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
             children: [
               Text(
                 percentLabel,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: colors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -490,9 +505,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   child: LinearProgressIndicator(
                     value: savingsPercent,
                     minHeight: 8,
-                    backgroundColor: const Color(0xFFE2E8F0),
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF059669),
+                    backgroundColor: context.isDarkMode
+                        ? const Color(0xFF1E2B40)
+                        : const Color(0xFFE2E8F0),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      colors.savings,
                     ),
                   ),
                 ),
@@ -508,13 +525,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
   // INCOME VS EXPENSE BAR CHART
   // ===========================================================================
   Widget _buildIncomeVsExpenseChartCard(ThemeData theme) {
+    final colors = context.colors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimens.dimen16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: colors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,7 +540,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           Text(
             'Income vs Expense',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: AppColors.textPrimary,
+              color: colors.textPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -534,7 +552,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     child: Text(
                       'No trend data available',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textHint,
+                        color: colors.textHint,
                       ),
                     ),
                   )
@@ -556,6 +574,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildBarChart() {
+    final colors = context.colors;
     double maxVal = 0;
     for (final trend in _trends) {
       if (trend.income > maxVal) maxVal = trend.income;
@@ -603,8 +622,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
           show: true,
           drawVerticalLine: false,
           horizontalInterval: maxY > 0 ? maxY / 3 : 1,
-          getDrawingHorizontalLine: (value) => const FlLine(
-            color: Color(0xFFF1F5F9),
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: colors.divider,
             strokeWidth: 1,
           ),
         ),
@@ -627,11 +646,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   return SideTitleWidget(
                     meta: meta,
                     space: 4,
-                    child: const Text(
+                    child: Text(
                       '0',
                       style: TextStyle(
                         fontSize: 10,
-                        color: AppColors.textHint,
+                        color: colors.textHint,
                       ),
                     ),
                   );
@@ -649,9 +668,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   space: 4,
                   child: Text(
                     formatted,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
-                      color: AppColors.textHint,
+                      color: colors.textHint,
                     ),
                   ),
                 );
@@ -672,10 +691,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   space: 6,
                   child: Text(
                     _trends[index].monthLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
+                      color: colors.textSecondary,
                     ),
                   ),
                 );
@@ -689,9 +708,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final isIncome = rodIndex == 0;
               final type = isIncome ? 'Income' : 'Expense';
-              final amount = NumberFormat('#,##,###').format(rod.toY);
+              final formatted = CurrencyHelper.formatAmount(rod.toY, symbol: _currencySymbol);
               return BarTooltipItem(
-                '$type: $_currencySymbol$amount',
+                '$type: $formatted',
                 const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -721,10 +740,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
       ],
@@ -735,15 +754,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
   // TOP SPENDING CATEGORIES SECTION
   // ===========================================================================
   Widget _buildTopSpendingCategoriesCard(ThemeData theme) {
+    final colors = context.colors;
     final breakdown = _summary.categoryBreakdown;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimens.dimen16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: colors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -751,7 +771,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           Text(
             'Top Spending Categories',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: AppColors.textPrimary,
+              color: colors.textPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -763,7 +783,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: Text(
                   'No expense recorded for this month',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textHint,
+                    color: colors.textHint,
                   ),
                 ),
               ),
@@ -785,7 +805,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: item.colorValue.withValues(alpha: 0.15),
+                        color: item.colorValue.withValues(
+                          alpha: context.isDarkMode ? 0.22 : 0.15,
+                        ),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -806,18 +828,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             children: [
                               Text(
                                 item.categoryName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
+                                  color: colors.textPrimary,
                                 ),
                               ),
                               Text(
                                 item.formattedPercentage,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
+                                  color: colors.textSecondary,
                                 ),
                               ),
                             ],
@@ -828,9 +850,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             child: LinearProgressIndicator(
                               value: progress,
                               minHeight: 6,
-                              backgroundColor: const Color(0xFFF1F5F9),
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
+                              backgroundColor: colors.inputFill,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colors.primary,
                               ),
                             ),
                           ),
@@ -850,15 +872,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
   // CATEGORY TAB CONTENT
   // ===========================================================================
   Widget _buildCategoryContent(ThemeData theme) {
+    final colors = context.colors;
     final breakdown = _summary.categoryBreakdown;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimens.dimen16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: colors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -869,17 +892,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Text(
                 'Category Breakdown',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.textPrimary,
+                  color: colors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               if (breakdown.isNotEmpty)
                 Text(
                   _summary.formattedExpense(symbol: _currencySymbol),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.expense,
+                    color: colors.expense,
                   ),
                 ),
             ],
@@ -892,7 +915,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: Text(
                   'No expense recorded for this month',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textHint,
+                    color: colors.textHint,
                   ),
                 ),
               ),
@@ -976,7 +999,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               fontWeight: isSelected
                                   ? FontWeight.w700
                                   : FontWeight.w500,
-                              color: AppColors.textPrimary,
+                              color: colors.textPrimary,
                             ),
                           ),
                         ),
@@ -987,7 +1010,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             fontWeight: isSelected
                                 ? FontWeight.w600
                                 : FontWeight.normal,
-                            color: AppColors.textSecondary,
+                            color: colors.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -998,7 +1021,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             fontWeight: FontWeight.w600,
                             color: isSelected
                                 ? item.colorValue
-                                : AppColors.textPrimary,
+                                : colors.textPrimary,
                           ),
                         ),
                       ],
@@ -1017,6 +1040,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     ThemeData theme,
     List<CategorySpending> breakdown,
   ) {
+    final colors = context.colors;
     if (_touchedPieIndex >= 0 && _touchedPieIndex < breakdown.length) {
       final touchedItem = breakdown[_touchedPieIndex];
       return Padding(
@@ -1038,16 +1062,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
             const SizedBox(height: 2),
             Text(
               touchedItem.formattedAmount(symbol: _currencySymbol),
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: colors.textPrimary,
                 fontSize: 13,
               ),
             ),
             Text(
               touchedItem.formattedPercentage,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: colors.textSecondary,
                 fontSize: 10,
               ),
             ),
@@ -1059,19 +1083,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
+        Text(
           'Total',
           style: TextStyle(
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
             fontSize: 11,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           _summary.formattedExpense(symbol: _currencySymbol),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             fontSize: 13,
           ),
         ),
@@ -1114,13 +1138,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
   // TRENDS TAB CONTENT
   // ===========================================================================
   Widget _buildTrendsContent(ThemeData theme) {
+    final colors = context.colors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimens.dimen16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: colors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1128,7 +1153,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           Text(
             'Monthly Trends (Last 6 Months)',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: AppColors.textPrimary,
+              color: colors.textPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1140,7 +1165,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: Text(
                   'No trend data recorded',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textHint,
+                    color: colors.textHint,
                   ),
                 ),
               ),
@@ -1150,9 +1175,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _trends.length,
-              separatorBuilder: (_, _) => const Divider(
+              separatorBuilder: (_, _) => Divider(
                 height: 16,
-                color: AppColors.dividerColor,
+                color: colors.divider,
               ),
               itemBuilder: (context, index) {
                 final trend = _trends[index];
@@ -1168,14 +1193,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F4F9),
+                          color: colors.inputFill,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           trend.monthLabel,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: colors.textPrimary,
                             fontSize: 12,
                           ),
                         ),
@@ -1187,19 +1212,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           children: [
                             Row(
                               children: [
-                                const Text(
+                                Text(
                                   'Income: ',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textSecondary,
+                                    color: colors.textSecondary,
                                   ),
                                 ),
                                 Text(
-                                  '$_currencySymbol${NumberFormat('#,##,###').format(trend.income)}',
-                                  style: const TextStyle(
+                                  CurrencyHelper.formatAmount(trend.income, symbol: _currencySymbol),
+                                  style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF16A34A),
+                                    color: colors.income,
                                   ),
                                 ),
                               ],
@@ -1207,19 +1232,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             const SizedBox(height: 2),
                             Row(
                               children: [
-                                const Text(
+                                Text(
                                   'Expense: ',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textSecondary,
+                                    color: colors.textSecondary,
                                   ),
                                 ),
                                 Text(
-                                  '$_currencySymbol${NumberFormat('#,##,###').format(trend.expense)}',
-                                  style: const TextStyle(
+                                  CurrencyHelper.formatAmount(trend.expense, symbol: _currencySymbol),
+                                  style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFFDC2626),
+                                    color: colors.expense,
                                   ),
                                 ),
                               ],
@@ -1230,21 +1255,26 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text(
+                          Text(
                             'Net',
                             style: TextStyle(
                               fontSize: 10,
-                              color: AppColors.textSecondary,
+                              color: colors.textSecondary,
                             ),
                           ),
                           Text(
-                            '${isPositive ? '+' : ''}$_currencySymbol${NumberFormat('#,##,###').format(net)}',
+                            CurrencyHelper.formatAmount(
+                              net,
+                              symbol: _currencySymbol,
+                              showSign: true,
+                              isIncome: isPositive,
+                            ),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: isPositive
-                                  ? const Color(0xFF10B981)
-                                  : const Color(0xFFDC2626),
+                                  ? colors.income
+                                  : colors.expense,
                             ),
                           ),
                         ],
@@ -1266,7 +1296,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 8.0,
-      color: AppColors.white,
+      color: context.colors.bottomNavBackground,
       elevation: 8,
       child: SizedBox(
         height: 60,
@@ -1297,8 +1327,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     VoidCallback onTap,
   ) {
     final color = isSelected
-        ? AppColors.bottomNavSelected
-        : AppColors.bottomNavUnselected;
+        ? context.colors.bottomNavSelected
+        : context.colors.bottomNavUnselected;
 
     return InkWell(
       onTap: onTap,

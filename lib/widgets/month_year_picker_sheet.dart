@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kharch_mate/resources/app_colors.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 
 class MonthYearResult {
   final DateTime? date;
@@ -24,7 +24,7 @@ Future<MonthYearResult?> showMonthYearPickerSheet({
 }) {
   return showModalBottomSheet<MonthYearResult>(
     context: context,
-    backgroundColor: AppColors.white,
+    backgroundColor: context.colors.cardBackground,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -123,7 +123,7 @@ class _MonthYearPickerSheetState extends State<MonthYearPickerSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderColor,
+                  color: context.colors.cardBorder,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -138,7 +138,7 @@ class _MonthYearPickerSheetState extends State<MonthYearPickerSheet> {
                   'Select Month',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                     fontSize: 18,
                   ),
                 ),
@@ -151,7 +151,7 @@ class _MonthYearPickerSheetState extends State<MonthYearPickerSheet> {
                         vertical: 4,
                       ),
                       backgroundColor: _isAllMonths
-                          ? AppColors.primary.withValues(alpha: 0.12)
+                          ? context.colors.primary.withValues(alpha: 0.12)
                           : Colors.transparent,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -161,8 +161,8 @@ class _MonthYearPickerSheetState extends State<MonthYearPickerSheet> {
                       'All Months',
                       style: TextStyle(
                         color: _isAllMonths
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
+                            ? context.colors.primary
+                            : context.colors.textSecondary,
                         fontWeight:
                             _isAllMonths ? FontWeight.w700 : FontWeight.w600,
                         fontSize: 13,
@@ -177,17 +177,17 @@ class _MonthYearPickerSheetState extends State<MonthYearPickerSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: context.colors.cardBackground,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderColor),
+                border: Border.all(color: context.colors.cardBorder),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.chevron_left_rounded,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                       size: 26,
                     ),
                     onPressed: _previousYear,
@@ -195,16 +195,16 @@ class _MonthYearPickerSheetState extends State<MonthYearPickerSheet> {
                   ),
                   Text(
                     '$_selectedYear',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.chevron_right_rounded,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                       size: 26,
                     ),
                     onPressed: _nextYear,
@@ -240,17 +240,17 @@ class _MonthYearPickerSheetState extends State<MonthYearPickerSheet> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.primary
+                          ? context.colors.primary
                           : isCurrentMonth
-                              ? AppColors.primary.withValues(alpha: 0.08)
-                              : AppColors.white,
+                              ? context.colors.primaryBackground
+                              : context.colors.cardBackground,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
-                            ? AppColors.primary
+                            ? context.colors.primary
                             : isCurrentMonth
-                                ? AppColors.primaryLight
-                                : AppColors.borderColor,
+                                ? context.colors.primaryLight
+                                : context.colors.cardBorder,
                         width: isSelected || isCurrentMonth ? 1.5 : 1,
                       ),
                     ),
@@ -268,18 +268,18 @@ class _MonthYearPickerSheetState extends State<MonthYearPickerSheet> {
                                     ? FontWeight.w700
                                     : FontWeight.w500,
                             color: isSelected
-                                ? AppColors.white
+                                ? Colors.white
                                 : isCurrentMonth
-                                    ? AppColors.primary
-                                    : AppColors.textPrimary,
+                                    ? context.colors.primary
+                                    : context.colors.textPrimary,
                           ),
                         ),
                         if (isCurrentMonth && !isSelected)
-                          const Text(
+                          Text(
                             'Current',
                             style: TextStyle(
                               fontSize: 9,
-                              color: AppColors.primary,
+                              color: context.colors.primary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

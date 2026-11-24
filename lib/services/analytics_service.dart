@@ -97,7 +97,7 @@ class AnalyticsService {
     await _logEvent('income_added', {
       'amount': amount,
       'category': category,
-      if (paymentMethod != null) 'payment_method': paymentMethod,
+      'payment_method': ?paymentMethod,
     });
   }
 
@@ -112,7 +112,7 @@ class AnalyticsService {
     await _logEvent('expense_added', {
       'amount': amount,
       'category': category,
-      if (paymentMethod != null) 'payment_method': paymentMethod,
+      'payment_method': ?paymentMethod,
     });
   }
 

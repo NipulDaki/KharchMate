@@ -14,9 +14,6 @@ class AdService {
 
   final SecureStorageService storageService;
   final AppConfig appConfig;
-  final Duration minAppOpenInterval;
-  final Duration appOpenCacheExpiry;
-  final int minSessionsBeforeFirstAd;
 
   DateTime? _adFreeUntil;
   Timer? _expiryTimer;
@@ -25,29 +22,17 @@ class AdService {
 
   RewardedAd? _rewardedAd;
   bool _isRewardedAdLoading = false;
+  Completer<bool>? _rewardedCompleter;
 
   AppOpenAd? _appOpenAd;
   bool _isAppOpenAdLoading = false;
-  DateTime? _appOpenLoadTime;
   bool _isShowingAppOpenAd = false;
   Completer<bool>? _appOpenCompleter;
-
-  DateTime? _lastAppOpenShownTimestamp;
-  int _sessionCount = 0;
 
   AdService({
     required this.storageService,
     AppConfig? appConfig,
-    this.minAppOpenInterval = const Duration(hours: 4),
-    this.appOpenCacheExpiry = const Duration(hours: 4),
-    this.minSessionsBeforeFirstAd = 3,
   }) : appConfig = appConfig ?? AppConfig.current;
-
-  /// Total count of app launch sessions tracked over lifetime.
-  int get sessionCount => _sessionCount;
-
-  /// Timestamp when an App Open ad was last displayed.
-  DateTime? get lastAppOpenShownTimestamp => _lastAppOpenShownTimestamp;
 
   /// Stream that emits whenever the ad-free status changes.
   Stream<bool> get onAdFreeChanged => _adFreeController.stream;
@@ -97,22 +82,11 @@ class AdService {
         ),
       );
 
-      // Preload App Open ad only if user is not ad-free
-      if (!isAdFree) {
-        loadAppOpenAd();
-      }
-      // Rewarded video ads are lazily loaded on-demand when user visits settings
-      // or triggers the reward prompt to avoid downloading heavy video creatives.
+      // Preload App Open ad and Rewarded Video ad
+      loadAppOpenAd();
+      loadRewardedAd();
     } catch (e) {
       debugPrint('AdMob SDK initialization warning: $e');
-    }
-
-    // 3. Track session count & restore last App Open impression timestamp
-    try {
-      _sessionCount = await storageService.incrementAppSessionCount();
-      _lastAppOpenShownTimestamp = await storageService.getAppOpenLastShown();
-    } catch (e) {
-      debugPrint('AdService session/cooldown restore error: $e');
     }
   }
 
@@ -150,7 +124,7 @@ class AdService {
   /// extend the days. Once the 1 day has completed and the pass expires,
   /// calling this again will grant a new 1-day pass.
   Future<bool> grantAdFreePass({
-    Duration duration = const Duration(days: 3),
+    Duration duration = const Duration(days: 1),
   }) async {
     if (isAdFree) {
       // Pass is already active; do not increase the days.
@@ -167,9 +141,7 @@ class AdService {
       );
     } catch (_) {}
 
-    // Dispose cached ads to free up memory and disk storage immediately
-    _rewardedAd?.dispose();
-    _rewardedAd = null;
+    // Dispose cached App Open ad to free up memory and respect ad-free pass
     _appOpenAd?.dispose();
     _appOpenAd = null;
 
@@ -206,10 +178,29 @@ class AdService {
     VoidCallback? onLoaded,
     Function(LoadAdError)? onFailed,
   }) {
-    if (isAdFree || _rewardedAd != null || _isRewardedAdLoading) return;
+    if (_rewardedAd != null) {
+      onLoaded?.call();
+      return;
+    }
+
+    if (_isRewardedAdLoading) {
+      if (_rewardedCompleter != null) {
+        _rewardedCompleter!.future.then((success) {
+          if (success) {
+            onLoaded?.call();
+          } else {
+            onFailed?.call(
+              LoadAdError(0, 'AdMob', 'Rewarded ad failed to load', null),
+            );
+          }
+        });
+      }
+      return;
+    }
 
     final adUnitId = overrideAdUnitId ?? appConfig.rewardedAdUnitId;
     _isRewardedAdLoading = true;
+    _rewardedCompleter = Completer<bool>();
     try {
       RewardedAd.load(
         adUnitId: adUnitId,
@@ -226,11 +217,12 @@ class AdService {
               );
             };
             _isRewardedAdLoading = false;
+            if (_rewardedCompleter != null && !_rewardedCompleter!.isCompleted) {
+              _rewardedCompleter!.complete(true);
+            }
             onLoaded?.call();
           },
           onAdFailedToLoad: (error) {
-            _rewardedAd = null;
-            _isRewardedAdLoading = false;
             debugPrint('Rewarded ad ($adUnitId) failed to load: ${error.message}');
             if (adUnitId != appConfig.testRewardedAdUnitId) {
               loadRewardedAd(
@@ -240,12 +232,20 @@ class AdService {
               );
               return;
             }
+            _rewardedAd = null;
+            _isRewardedAdLoading = false;
+            if (_rewardedCompleter != null && !_rewardedCompleter!.isCompleted) {
+              _rewardedCompleter!.complete(false);
+            }
             onFailed?.call(error);
           },
         ),
       );
     } catch (e) {
       _isRewardedAdLoading = false;
+      if (_rewardedCompleter != null && !_rewardedCompleter!.isCompleted) {
+        _rewardedCompleter!.complete(false);
+      }
       debugPrint('AdMob loadRewardedAd error: $e');
     }
   }
@@ -267,17 +267,13 @@ class AdService {
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _rewardedAd = null;
-        if (!isAdFree) {
-          loadRewardedAd();
-        }
+        loadRewardedAd();
         onDismissed?.call();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
         _rewardedAd = null;
-        if (!isAdFree) {
-          loadRewardedAd();
-        }
+        loadRewardedAd();
         onFailedToShow?.call(error);
       },
     );
@@ -285,9 +281,9 @@ class AdService {
     _rewardedAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) async {
         if (serviceLocator.isRegistered<AnalyticsService>()) {
-          serviceLocator<AnalyticsService>().logRewardedAdCompleted(durationDays: 3);
+          serviceLocator<AnalyticsService>().logRewardedAdCompleted(durationDays: 1);
         }
-        await grantAdFreePass(duration: const Duration(days: 3));
+        await grantAdFreePass(duration: const Duration(days: 1));
         onUserEarnedReward();
       },
     );
@@ -331,75 +327,8 @@ class AdService {
 
   bool _hasShownAppOpenAdOnLaunch = false;
 
-  /// Whether the cooldown period between App Open impressions is currently active.
-  bool get isCooldownActive {
-    if (_lastAppOpenShownTimestamp == null) return false;
-    return DateTime.now().difference(_lastAppOpenShownTimestamp!) <
-        minAppOpenInterval;
-  }
-
-  /// Remaining duration before the next App Open ad is permitted to display.
-  Duration? get remainingCooldown {
-    if (!isCooldownActive || _lastAppOpenShownTimestamp == null) return null;
-    final elapsed = DateTime.now().difference(_lastAppOpenShownTimestamp!);
-    final diff = minAppOpenInterval - elapsed;
-    return diff.isNegative ? Duration.zero : diff;
-  }
-
-  /// Whether an App Open ad is loaded, not expired (< appOpenCacheExpiry),
-  /// and ready to display. If an ad is expired, it is immediately disposed
-  /// and a fresh one is requested in the background.
-  bool get isAppOpenAdAvailable {
-    if (isAdFree || _appOpenAd == null || _appOpenLoadTime == null) {
-      return false;
-    }
-
-    final isExpired =
-        DateTime.now().difference(_appOpenLoadTime!) >= appOpenCacheExpiry;
-    if (isExpired) {
-      debugPrint(
-        'AppOpenAd expired (cached >= ${appOpenCacheExpiry.inHours}h). Disposing & requesting fresh ad.',
-      );
-      _appOpenAd?.dispose();
-      _appOpenAd = null;
-      _appOpenLoadTime = null;
-      loadAppOpenAd();
-      return false;
-    }
-
-    return true;
-  }
-
-  /// Comprehensive check evaluating all rules:
-  /// 1. User is not Ad-Free
-  /// 2. No other App Open ad is currently visible
-  /// 3. Session count has met or exceeded [minSessionsBeforeFirstAd] threshold
-  /// 4. Cooldown interval ([minAppOpenInterval]) has elapsed since last impression
-  /// 5. Valid, non-expired App Open ad is cached and ready
-  bool get canShowAppOpenAdNow {
-    if (isAdFree) {
-      debugPrint('AppOpenAd suppressed: User is currently Ad-Free.');
-      return false;
-    }
-    if (_isShowingAppOpenAd) {
-      debugPrint('AppOpenAd suppressed: An App Open ad is already displaying.');
-      return false;
-    }
-    if (_sessionCount < minSessionsBeforeFirstAd) {
-      debugPrint(
-        'AppOpenAd suppressed: Session count ($_sessionCount) < $minSessionsBeforeFirstAd threshold.',
-      );
-      return false;
-    }
-    if (isCooldownActive) {
-      final rem = remainingCooldown?.inMinutes ?? 0;
-      debugPrint(
-        'AppOpenAd suppressed: Cooldown active ($rem mins remaining of ${minAppOpenInterval.inHours}h).',
-      );
-      return false;
-    }
-    return isAppOpenAdAvailable;
-  }
+  /// Whether an App Open ad is loaded and ready to display.
+  bool get isAppOpenAdAvailable => !isAdFree && _appOpenAd != null;
 
   /// Whether an App Open ad is currently loading.
   bool get isAppOpenAdLoading => _isAppOpenAdLoading;
@@ -454,7 +383,6 @@ class AdService {
                 currencyCode: currencyCode,
               );
             };
-            _appOpenLoadTime = DateTime.now();
             _isAppOpenAdLoading = false;
             debugPrint('AppOpenAd loaded successfully ($adUnitId).');
             if (_appOpenCompleter != null && !_appOpenCompleter!.isCompleted) {
@@ -481,7 +409,6 @@ class AdService {
             }
 
             _appOpenAd = null;
-            _appOpenLoadTime = null;
             _isAppOpenAdLoading = false;
             if (_appOpenCompleter != null && !_appOpenCompleter!.isCompleted) {
               _appOpenCompleter!.complete(false);
@@ -499,32 +426,22 @@ class AdService {
     }
   }
 
-  /// Shows the loaded AppOpenAd if all conditions are satisfied.
-  /// Calls [onComplete] when dismissed or if display fails or is suppressed.
+  /// Shows the loaded AppOpenAd.
+  /// Calls [onComplete] when dismissed or if display fails.
   void showAppOpenAd({
     VoidCallback? onComplete,
   }) {
-    if (!canShowAppOpenAdNow) {
+    if (!isAppOpenAdAvailable) {
       onComplete?.call();
-      if (!isAppOpenAdAvailable && !_isAppOpenAdLoading && !isAdFree) {
-        loadAppOpenAd();
-      }
+      loadAppOpenAd();
       return;
     }
 
     _isShowingAppOpenAd = true;
     _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
-      onAdShowedFullScreenContent: (ad) async {
-        final now = DateTime.now();
-        _lastAppOpenShownTimestamp = now;
-        try {
-          await storageService.setAppOpenLastShown(now);
-        } catch (_) {}
-      },
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _appOpenAd = null;
-        _appOpenLoadTime = null;
         _isShowingAppOpenAd = false;
         onComplete?.call();
         loadAppOpenAd(); // Preload next ad
@@ -533,7 +450,6 @@ class AdService {
         debugPrint('AppOpenAd failed to show: ${error.message}');
         ad.dispose();
         _appOpenAd = null;
-        _appOpenLoadTime = null;
         _isShowingAppOpenAd = false;
         onComplete?.call();
         loadAppOpenAd();
@@ -543,17 +459,14 @@ class AdService {
     _appOpenAd!.show();
   }
 
-  /// Shows the AppOpenAd when entering Dashboard on cold launch.
+  /// Shows the AppOpenAd when entering Dashboard on app launch.
   /// If the ad is already loaded, it displays immediately.
   /// If still loading, it waits up to [timeout] and displays upon load.
   Future<void> showAppOpenAdOnDashboard({
-    Duration timeout = const Duration(seconds: 2),
+    Duration timeout = const Duration(seconds: 6),
     VoidCallback? onDismissed,
   }) async {
-    if (isAdFree ||
-        _hasShownAppOpenAdOnLaunch ||
-        _sessionCount < minSessionsBeforeFirstAd ||
-        isCooldownActive) {
+    if (isAdFree || _hasShownAppOpenAdOnLaunch) {
       return;
     }
 
@@ -570,7 +483,7 @@ class AdService {
     if (_isAppOpenAdLoading && _appOpenCompleter != null) {
       try {
         final success = await _appOpenCompleter!.future.timeout(timeout);
-        if (success && canShowAppOpenAdNow && !_hasShownAppOpenAdOnLaunch) {
+        if (success && isAppOpenAdAvailable && !_hasShownAppOpenAdOnLaunch) {
           _hasShownAppOpenAdOnLaunch = true;
           showAppOpenAd(onComplete: onDismissed);
         }
@@ -586,10 +499,7 @@ class AdService {
     bool Function()? canShowCheck,
     VoidCallback? onDismissed,
   }) async {
-    if (isAdFree ||
-        _isShowingAppOpenAd ||
-        _sessionCount < minSessionsBeforeFirstAd ||
-        isCooldownActive) {
+    if (isAdFree || _isShowingAppOpenAd) {
       return;
     }
 
@@ -617,7 +527,7 @@ class AdService {
       return;
     }
 
-    if (canShowAppOpenAdNow) {
+    if (isAppOpenAdAvailable) {
       showAppOpenAd(onComplete: onComplete);
       return;
     }
@@ -630,13 +540,11 @@ class AdService {
       }
     }
 
-    if (canShowAppOpenAdNow) {
+    if (isAppOpenAdAvailable) {
       showAppOpenAd(onComplete: onComplete);
     } else {
       onComplete();
-      if (!isAppOpenAdAvailable && !_isAppOpenAdLoading && !isAdFree) {
-        loadAppOpenAd();
-      }
+      loadAppOpenAd();
     }
   }
 
@@ -655,25 +563,6 @@ class AdService {
         currency: currencyCode,
       );
     }
-  }
-
-  // ===========================================================================
-  // TESTING HOOKS
-  // ===========================================================================
-
-  @visibleForTesting
-  void setMockSessionCount(int count) {
-    _sessionCount = count;
-  }
-
-  @visibleForTesting
-  void setMockLastShownTimestamp(DateTime? timestamp) {
-    _lastAppOpenShownTimestamp = timestamp;
-  }
-
-  @visibleForTesting
-  void setMockAppOpenLoadTime(DateTime? loadTime) {
-    _appOpenLoadTime = loadTime;
   }
 
   /// Dispose any active resources.

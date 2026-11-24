@@ -1,4 +1,5 @@
 import 'package:kharch_mate/database/database_constants.dart';
+import 'package:kharch_mate/helper/currency_helper.dart';
 
 class UserProfile {
   final int? id;
@@ -63,8 +64,10 @@ class UserProfile {
       email: map[DatabaseConstants.colUserEmail] as String?,
       currencyCode:
           map[DatabaseConstants.colUserCurrencyCode] as String? ?? 'INR',
-      currencySymbol:
-          map[DatabaseConstants.colUserCurrencySymbol] as String? ?? '₹',
+      currencySymbol: CurrencyHelper.normalizeSymbol(
+        map[DatabaseConstants.colUserCurrencySymbol] as String?,
+        code: map[DatabaseConstants.colUserCurrencyCode] as String?,
+      ),
       isDarkMode: (map[DatabaseConstants.colUserIsDarkMode] as int? ?? 0) == 1,
       createdAt: DateTime.tryParse(
             map[DatabaseConstants.colUserCreatedAt] as String? ?? '',

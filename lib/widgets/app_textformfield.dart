@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:kharch_mate/resources/app_colors.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 
 class AppTextFormField extends StatefulWidget {
   const AppTextFormField({
@@ -201,9 +201,10 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
             counterText: "",
             hintText: widget.hintText,
             hintStyle: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: AppColors.textHint),
+                ?.copyWith(color: context.colors.textHint),
             labelText: widget.labelText,
-            labelStyle: Theme.of(context).textTheme.bodyMedium,
+            labelStyle: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: context.colors.textSecondary),
             prefixIcon: widget.prefixIcon,
             prefixIconConstraints:
                 widget.prefixIconConstraints ??
@@ -217,20 +218,20 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
             isDense: true,
             filled: widget.isEnabled,
             fillColor: widget.isEnabled
-                ? AppColors.primaryBackground
-                : Colors.grey.shade500,
+                ? context.colors.inputFill
+                : (context.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
 
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(
                 color: widget.hasBorder
-                    ? AppColors.borderColor
+                    ? context.colors.inputBorder
                     : Colors.transparent,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(
                 color: widget.hasBorder
-                    ? AppColors.primary
+                    ? context.colors.primary
                     : Colors.transparent,
                 width: widget.hasBorder ? 1 : 0,
               ),
@@ -238,7 +239,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
             disabledBorder: OutlineInputBorder(
               borderSide: BorderSide(
                 color: widget.hasBorder
-                    ? AppColors.bottomNavUnselected
+                    ? context.colors.bottomNavUnselected
                     : Colors.transparent,
               ),
             ),

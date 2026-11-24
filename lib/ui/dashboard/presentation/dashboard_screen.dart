@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
 import 'package:kharch_mate/helper/coach_mark_helper.dart';
+import 'package:kharch_mate/helper/currency_helper.dart';
 import 'package:kharch_mate/models/financial_summary.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
 import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
@@ -37,7 +39,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   DateTime _selectedDate = DateTime.now();
   int _touchedPieIndex = -1;
 
-  String get _currencySymbol => _userProfile?.currencySymbol ?? '₹';
+  String get _currencySymbol =>
+      CurrencyHelper.normalizeSymbol(_userProfile?.currencySymbol);
 
   // Coach Mark Targets
   final GlobalKey _keyTotalBalance = GlobalKey();
@@ -174,17 +177,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = context.colors;
     final userName = _userProfile?.name.trim().isNotEmpty == true
         ? _userProfile!.name.split(' ').first
         : 'User';
     final userInitials = _userProfile?.initials ?? 'U';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.scaffoldBackground,
       bottomNavigationBar: _buildBottomNav(context),
       floatingActionButton: FloatingActionButton(
         key: _keyFabAdd,
-        backgroundColor: AppColors.primary,
+        backgroundColor: colors.primary,
         shape: const CircleBorder(),
         elevation: 4,
         onPressed: () async {
@@ -202,7 +206,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           SafeArea(
             child: RefreshIndicator(
-              color: AppColors.primary,
+              color: colors.primary,
               onRefresh: _loadDashboardData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -224,14 +228,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Text(
                               _greeting,
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
+                                color: colors.textSecondary,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               userName,
                               style: theme.textTheme.titleLarge?.copyWith(
-                                color: AppColors.textPrimary,
+                                color: colors.textPrimary,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -326,32 +330,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: context.colors.cardBackground,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.borderColor),
+          border: Border.all(color: context.colors.cardBorder),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.calendar_today_rounded,
               size: 16,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
             const SizedBox(width: 8),
             Text(
               monthLabel,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 18,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ],
         ),
@@ -360,16 +364,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildTotalBalanceCard(ThemeData theme) {
+    final colors = context.colors;
     return Container(
       key: _keyTotalBalance,
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimens.dimen20),
       decoration: BoxDecoration(
-        gradient: AppColors.linerGradient,
+        gradient: colors.linearGradient,
         borderRadius: BorderRadius.circular(AppDimens.dimen16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
+            color: colors.primary.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -409,6 +414,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildIncomeExpenseRow(ThemeData theme) {
+    final colors = context.colors;
     return Row(
       children: [
         // Income
@@ -416,21 +422,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Container(
             padding: const EdgeInsets.all(AppDimens.dimen16),
             decoration: BoxDecoration(
-              color: AppColors.white,
+              color: colors.cardBackground,
               borderRadius: BorderRadius.circular(AppDimens.dimen16),
-              border: Border.all(color: AppColors.borderColor),
+              border: Border.all(color: colors.cardBorder),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: AppColors.incomeLight,
+                  decoration: BoxDecoration(
+                    color: colors.incomeContainer,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_upward_rounded,
-                    color: AppColors.income,
+                    color: colors.income,
                     size: 20,
                   ),
                 ),
@@ -442,7 +448,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Text(
                         "Income",
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: colors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -451,7 +457,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Text(
                           _summary.formattedIncome(symbol: _currencySymbol),
                           style: theme.textTheme.titleMedium?.copyWith(
-                            color: AppColors.income,
+                            color: colors.income,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -469,21 +475,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Container(
             padding: const EdgeInsets.all(AppDimens.dimen16),
             decoration: BoxDecoration(
-              color: AppColors.white,
+              color: colors.cardBackground,
               borderRadius: BorderRadius.circular(AppDimens.dimen16),
-              border: Border.all(color: AppColors.borderColor),
+              border: Border.all(color: colors.cardBorder),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: AppColors.expenseLight,
+                  decoration: BoxDecoration(
+                    color: colors.expenseContainer,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_downward_rounded,
-                    color: AppColors.expense,
+                    color: colors.expense,
                     size: 20,
                   ),
                 ),
@@ -495,7 +501,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Text(
                         "Expenses",
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: colors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -504,7 +510,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Text(
                           _summary.formattedExpense(symbol: _currencySymbol),
                           style: theme.textTheme.titleMedium?.copyWith(
-                            color: AppColors.expense,
+                            color: colors.expense,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -521,27 +527,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSavingsCard(ThemeData theme) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimens.dimen16,
         vertical: AppDimens.dimen14,
       ),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(AppDimens.dimen16),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: colors.cardBorder),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: AppColors.savingsLight,
+            decoration: BoxDecoration(
+              color: colors.savingsContainer,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.savings_rounded,
-              color: AppColors.savings,
+              color: colors.savings,
               size: 22,
             ),
           ),
@@ -553,14 +560,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Text(
                   "Savings",
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   _summary.formattedSavings(symbol: _currencySymbol),
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.savings,
+                    color: colors.savings,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -573,6 +580,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildExpenseByCategory(ThemeData theme) {
+    final colors = context.colors;
     final breakdown = _summary.categoryBreakdown;
     final hasExpenses = breakdown.isNotEmpty && _summary.totalExpense > 0;
 
@@ -580,9 +588,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimens.dimen16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(AppDimens.dimen16),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: colors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -593,7 +601,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(
                 "Expense by Category",
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.textPrimary,
+                  color: colors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -601,7 +609,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Text(
                   _summary.formattedExpense(symbol: _currencySymbol),
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.expense,
+                    color: colors.expense,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -615,7 +623,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Text(
                   "No expense recorded for this month",
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textHint,
+                    color: colors.textHint,
                   ),
                 ),
               ),
@@ -699,7 +707,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: Text(
                             item.categoryName,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textPrimary,
+                              color: colors.textPrimary,
                               fontWeight: isSelected
                                   ? FontWeight.w700
                                   : FontWeight.w500,
@@ -709,7 +717,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Text(
                           item.formattedAmount(symbol: _currencySymbol),
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: colors.textSecondary,
                             fontWeight: isSelected
                                 ? FontWeight.w600
                                 : FontWeight.normal,
@@ -721,7 +729,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: isSelected
                                 ? item.colorValue
-                                : AppColors.textPrimary,
+                                : colors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -919,6 +927,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildTransactionCard(TransactionItem tx, ThemeData theme) {
+    final colors = context.colors;
     final isIncome = tx.type.isIncome;
 
     return InkWell(
@@ -936,9 +945,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(AppDimens.dimen12),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: colors.cardBackground,
           borderRadius: BorderRadius.circular(AppDimens.dimen16),
-          border: Border.all(color: AppColors.borderColor),
+          border: Border.all(color: colors.cardBorder),
         ),
         child: Row(
           children: [
@@ -962,7 +971,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text(
                     tx.displayTitle,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      color: AppColors.textPrimary,
+                      color: colors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -970,7 +979,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text(
                     '${isIncome ? "Income" : "Expense"} • ${tx.formattedDate}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textHint,
+                      color: colors.textHint,
                     ),
                   ),
                 ],
@@ -979,7 +988,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               tx.formattedAmount(currencySymbol: _currencySymbol),
               style: theme.textTheme.titleSmall?.copyWith(
-                color: isIncome ? AppColors.income : AppColors.expense,
+                color: isIncome ? colors.income : colors.expense,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -993,7 +1002,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 8.0,
-      color: AppColors.white,
+      color: context.colors.bottomNavBackground,
       elevation: 8,
       child: SizedBox(
         height: 60,
@@ -1036,8 +1045,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Key? key,
   }) {
     final color = isSelected
-        ? AppColors.bottomNavSelected
-        : AppColors.bottomNavUnselected;
+        ? context.colors.bottomNavSelected
+        : context.colors.bottomNavUnselected;
 
     return InkWell(
       key: key,

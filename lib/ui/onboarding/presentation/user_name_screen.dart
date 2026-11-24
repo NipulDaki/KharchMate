@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/helper/validation_helper.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
@@ -71,7 +72,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.scaffoldBackground,
       body: Stack(
         children: [
           SafeArea(
@@ -94,10 +95,10 @@ class _UserNameScreenState extends State<UserNameScreen> {
                         height: 90,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: AppColors.linerGradient,
+                          gradient: context.colors.linearGradient,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.3),
+                              color: context.colors.primary.withValues(alpha: 0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -106,7 +107,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
                         child: const Icon(
                           Icons.account_balance_wallet_rounded,
                           size: 44,
-                          color: AppColors.white,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -117,7 +118,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
                     Text(
                       "What should we\ncall you? 👋",
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.w700,
                         height: 1.25,
                       ),
@@ -129,7 +130,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
                     Text(
                       "Enter your name and email to personalize your financial dashboard and track your kharch effortlessly.",
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         height: 1.5,
                       ),
                     ),
@@ -142,9 +143,9 @@ class _UserNameScreenState extends State<UserNameScreen> {
                       hintText: "Your Full Name",
                       textCapitalization: TextCapitalization.words,
                       textInputAction: TextInputAction.next,
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.person_outline_rounded,
-                        color: AppColors.primary,
+                        color: context.colors.primary,
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -166,9 +167,9 @@ class _UserNameScreenState extends State<UserNameScreen> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _submitUser(),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.email_outlined,
-                        color: AppColors.primary,
+                        color: context.colors.primary,
                       ),
                       validator: ValidationHelper.email,
                     ),
@@ -184,7 +185,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
                         borderRadius: AppDimens.dimen12,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         textStyle: theme.textTheme.titleMedium?.copyWith(
-                          color: AppColors.white,
+                          color: Colors.white,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
@@ -198,7 +199,7 @@ class _UserNameScreenState extends State<UserNameScreen> {
                       child: Text(
                         "🔒 100% Offline & Private • Stored securely on device",
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textHint,
+                          color: context.colors.textHint,
                         ),
                       ),
                     ),

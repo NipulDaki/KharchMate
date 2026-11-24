@@ -3,12 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kharch_mate/di/service_locator.dart';
-import 'package:kharch_mate/services/analytics_service.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/models/transaction_item.dart';
 import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
+import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
@@ -110,42 +111,42 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.white,
+        backgroundColor: ctx.colors.cardBackground,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Text(
+        title: Text(
           'Delete Transaction',
           style: TextStyle(
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: ctx.colors.textPrimary,
           ),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to delete this transaction? This action cannot be undone.',
           style: TextStyle(
-            color: AppColors.textSecondary,
+            color: ctx.colors.textSecondary,
             fontSize: 14,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text(
+            child: Text(
               'Cancel',
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: ctx.colors.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
+            child: Text(
               'Delete',
               style: TextStyle(
-                color: AppColors.expense,
+                color: ctx.colors.expense,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -202,34 +203,34 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
     if (_transaction == null) {
       if (_isLoading) {
-        return const Scaffold(
-          backgroundColor: AppColors.background,
+        return Scaffold(
+          backgroundColor: context.colors.scaffoldBackground,
         );
       }
       return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.scaffoldBackground,
         appBar: AppBar(
-          backgroundColor: AppColors.background,
+          backgroundColor: context.colors.scaffoldBackground,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_rounded,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
             onPressed: _handleBack,
           ),
-          title: const Text(
+          title: Text(
             'Transaction Details',
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
         ),
-        body: const Center(
+        body: Center(
           child: Text(
             'Transaction not found',
-            style: TextStyle(color: AppColors.textHint, fontSize: 16),
+            style: TextStyle(color: context.colors.textHint, fontSize: 16),
           ),
         ),
       );
@@ -248,29 +249,29 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         // PopScope callback
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.scaffoldBackground,
         appBar: AppBar(
-          backgroundColor: AppColors.background,
+          backgroundColor: context.colors.scaffoldBackground,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_rounded,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
             onPressed: _handleBack,
           ),
           title: Text(
             'Transaction Details',
             style: theme.textTheme.titleLarge?.copyWith(
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
           actions: [
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.edit_outlined,
-                color: AppColors.primary,
+                color: context.colors.primary,
                 size: 24,
               ),
               tooltip: 'Edit Transaction',
@@ -313,7 +314,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           Text(
                             tx.displayTitle,
                             style: theme.textTheme.headlineSmall?.copyWith(
-                              color: AppColors.textPrimary,
+                              color: context.colors.textPrimary,
                               fontWeight: FontWeight.w700,
                               fontSize: 22,
                             ),
@@ -321,9 +322,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           const SizedBox(height: 4),
                           Text(
                             subtitle,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -341,7 +342,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w800,
-                    color: isIncome ? AppColors.income : AppColors.expense,
+                    color: isIncome ? context.colors.income : context.colors.expense,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -356,9 +357,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                     vertical: AppDimens.dimen12,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.white,
+                    color: context.colors.cardBackground,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.borderColor),
+                    border: Border.all(color: context.colors.cardBorder),
                   ),
                   child: Column(
                     children: [
@@ -368,10 +369,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         title: null,
                         value: tx.formattedDateTime,
                       ),
-                      const Divider(
+                      Divider(
                         height: 24,
                         thickness: 1,
-                        color: AppColors.dividerColor,
+                        color: context.colors.divider,
                       ),
                       // Payment Method Row
                       _buildDetailRow(
@@ -379,10 +380,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         title: 'Payment Method',
                         value: tx.paymentMethodName ?? 'Cash',
                       ),
-                      const Divider(
+                      Divider(
                         height: 24,
                         thickness: 1,
-                        color: AppColors.dividerColor,
+                        color: context.colors.divider,
                       ),
                       // Note Row
                       _buildDetailRow(
@@ -407,20 +408,20 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         height: 48,
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(
-                              color: AppColors.primary,
+                            side: BorderSide(
+                              color: context.colors.primary,
                               width: 1.5,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            backgroundColor: AppColors.white,
+                            backgroundColor: context.colors.cardBackground,
                           ),
                           onPressed: _navigateToEdit,
-                          child: const Text(
+                          child: Text(
                             'Edit',
                             style: TextStyle(
-                              color: AppColors.primary,
+                              color: context.colors.primary,
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                             ),
@@ -435,20 +436,20 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         height: 48,
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(
-                              color: AppColors.expense,
+                            side: BorderSide(
+                              color: context.colors.expense,
                               width: 1.5,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            backgroundColor: AppColors.white,
+                            backgroundColor: context.colors.cardBackground,
                           ),
                           onPressed: _confirmDelete,
-                          child: const Text(
+                          child: Text(
                             'Delete',
                             style: TextStyle(
-                              color: AppColors.expense,
+                              color: context.colors.expense,
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                             ),
@@ -479,7 +480,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         Icon(
           icon,
           size: 22,
-          color: AppColors.textPrimary,
+          color: context.colors.textPrimary,
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -489,29 +490,29 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                   ],
                 )
               : Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
         ),

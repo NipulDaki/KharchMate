@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/helper/validation_helper.dart';
 import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
@@ -135,29 +136,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         : 'N/A';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.scaffoldBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_rounded,
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'User Profile',
           style: theme.textTheme.titleLarge?.copyWith(
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: false,
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+          ? Center(
+              child: CircularProgressIndicator(color: context.colors.primary),
             )
           : SafeArea(
               child: SingleChildScrollView(
@@ -187,9 +188,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(AppDimens.dimen16),
                         decoration: BoxDecoration(
-                          color: AppColors.white,
+                          color: context.colors.cardBackground,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderColor),
+                          border: Border.all(color: context.colors.cardBorder),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,9 +201,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               hintText: 'Enter your full name',
                               textCapitalization: TextCapitalization.words,
                               textInputAction: TextInputAction.next,
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.person_outline_rounded,
-                                color: AppColors.primary,
+                                color: context.colors.primary,
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -224,9 +225,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _saveProfile(),
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.email_outlined,
-                                color: AppColors.primary,
+                                color: context.colors.primary,
                               ),
                               validator: ValidationHelper.email,
                             ),
@@ -251,9 +252,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           vertical: AppDimens.dimen12,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.white,
+                          color: context.colors.cardBackground,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderColor),
+                          border: Border.all(color: context.colors.cardBorder),
                         ),
                         child: Column(
                           children: [
@@ -262,9 +263,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               label: 'Default Currency',
                               value: currencyDisplay,
                             ),
-                            const Divider(
+                            Divider(
                               height: 1,
-                              color: AppColors.dividerColor,
+                              color: context.colors.divider,
                             ),
                             _buildInfoRow(
                               icon: Icons.calendar_today_rounded,
@@ -282,9 +283,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         width: double.infinity,
                         height: 52,
                         child: _isSaving
-                            ? const Center(
+                            ? Center(
                                 child: CircularProgressIndicator(
-                                  color: AppColors.primary,
+                                  color: context.colors.primary,
                                 ),
                               )
                             : AppTextButton(
@@ -295,7 +296,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 ),
                                 textStyle: theme.textTheme.titleMedium
                                     ?.copyWith(
-                                      color: AppColors.white,
+                                      color: Colors.white,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.5,
                                     ),
@@ -324,9 +325,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimens.dimen20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: context.colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: context.colors.cardBorder),
       ),
       child: Column(
         children: [
@@ -335,10 +336,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             height: 80,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: AppColors.linerGradient,
+              gradient: context.colors.linearGradient,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.25),
+                  color: context.colors.primary.withValues(alpha: 0.25),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -348,7 +349,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             child: Text(
               initials,
               style: const TextStyle(
-                color: AppColors.white,
+                color: Colors.white,
                 fontSize: 30,
                 fontWeight: FontWeight.w700,
               ),
@@ -357,42 +358,42 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           const SizedBox(height: AppDimens.dimen12),
           Text(
             displayName,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             displayEmail,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: AppDimens.dimen10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.incomeLight,
+              color: context.colors.incomeContainer,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.check_circle_rounded,
                   size: 14,
-                  color: AppColors.income,
+                  color: context.colors.income,
                 ),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text(
                   'Active Account',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.income,
+                    color: context.colors.income,
                   ),
                 ),
               ],
@@ -410,18 +411,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: const Color(0xFFF0F4F8),
+            color: context.colors.elevatedSurface,
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Icon(icon, size: 16, color: AppColors.textPrimary),
+          child: Icon(icon, size: 16, color: context.colors.textPrimary),
         ),
         const SizedBox(width: 10),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
         ),
       ],
@@ -440,28 +441,28 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           Container(
             width: 36,
             height: 36,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF0F4F8),
+            decoration: BoxDecoration(
+              color: context.colors.elevatedSurface,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 18, color: AppColors.textPrimary),
+            child: Icon(icon, size: 18, color: context.colors.textPrimary),
           ),
           const SizedBox(width: 12),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const Spacer(),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
         ],

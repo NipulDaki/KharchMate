@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:kharch_mate/helper/currency_helper.dart';
 import 'package:kharch_mate/models/category.dart';
 
 class CategorySpending {
@@ -34,7 +34,7 @@ class CategorySpending {
   IconData get iconData => CategoryModel.iconDataFrom(categoryIcon, categoryName);
 
   String formattedAmount({String symbol = '₹'}) {
-    return '$symbol${NumberFormat('#,##,###').format(amount)}';
+    return CurrencyHelper.formatAmount(amount, symbol: symbol);
   }
 
   String get formattedPercentage => '${percentage.toStringAsFixed(0)}%';
@@ -90,16 +90,16 @@ class FinancialSummary {
   }
 
   String formattedIncome({String symbol = '₹'}) =>
-      '$symbol${NumberFormat('#,##,###').format(totalIncome)}';
+      CurrencyHelper.formatAmount(totalIncome, symbol: symbol);
 
   String formattedExpense({String symbol = '₹'}) =>
-      '$symbol${NumberFormat('#,##,###').format(totalExpense)}';
+      CurrencyHelper.formatAmount(totalExpense, symbol: symbol);
 
   String formattedBalance({String symbol = '₹'}) =>
-      '$symbol${NumberFormat('#,##,###').format(totalBalance)}';
+      CurrencyHelper.formatAmount(totalBalance, symbol: symbol);
 
   String formattedSavings({String symbol = '₹'}) =>
-      '$symbol${NumberFormat('#,##,###').format(savings)}';
+      CurrencyHelper.formatAmount(savings, symbol: symbol);
 
   String get formattedSavingsRate => '${savingsRate.toStringAsFixed(0)}%';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kharch_mate/database/database_constants.dart';
+import 'package:kharch_mate/helper/currency_helper.dart';
 import 'package:kharch_mate/models/category.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 
@@ -121,13 +122,12 @@ class TransactionItem {
   }
 
   String formattedAmount({String currencySymbol = '₹'}) {
-    final formatter = NumberFormat('#,##,###.##');
-    final formattedNum = formatter.format(amount);
-    if (type == TransactionType.income) {
-      return '+ $currencySymbol$formattedNum';
-    } else {
-      return '- $currencySymbol$formattedNum';
-    }
+    return CurrencyHelper.formatAmount(
+      amount,
+      symbol: currencySymbol,
+      showSign: true,
+      isIncome: type == TransactionType.income,
+    );
   }
 
   Color get categoryColorValue {

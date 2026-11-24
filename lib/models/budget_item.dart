@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:kharch_mate/database/database_constants.dart';
+import 'package:kharch_mate/helper/currency_helper.dart';
 import 'package:kharch_mate/models/category.dart';
 
 class BudgetItem {
@@ -75,15 +75,15 @@ class BudgetItem {
   bool get isExceeded => spentAmount > amountLimit;
 
   String formattedLimit({String symbol = '₹'}) {
-    return '$symbol${NumberFormat('#,##,###').format(amountLimit)}';
+    return CurrencyHelper.formatAmount(amountLimit, symbol: symbol);
   }
 
   String formattedSpent({String symbol = '₹'}) {
-    return '$symbol${NumberFormat('#,##,###').format(spentAmount)}';
+    return CurrencyHelper.formatAmount(spentAmount, symbol: symbol);
   }
 
   String formattedRemaining({String symbol = '₹'}) {
-    return '$symbol${NumberFormat('#,##,###').format(remainingAmount)}';
+    return CurrencyHelper.formatAmount(remainingAmount, symbol: symbol);
   }
 
   Color get categoryColorValue {

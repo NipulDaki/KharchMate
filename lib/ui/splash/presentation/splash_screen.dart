@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:kharch_mate/di/service_locator.dart';
-import 'package:kharch_mate/resources/app_colors.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
+import 'package:kharch_mate/services/app_update_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -25,6 +27,21 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _handleRouting() async {
     // Short delay for smooth visual transition
     await Future.delayed(const Duration(milliseconds: 1800));
+
+    if (!mounted) return;
+
+    // Check for Google Play mandatory in-app update
+    if (serviceLocator.isRegistered<AppUpdateService>()) {
+      final updateService = serviceLocator<AppUpdateService>();
+      final updateResult = await updateService.checkForImmediateUpdate();
+
+      if (updateResult == AppUpdateResult.userDeniedUpdate ||
+          updateResult == AppUpdateResult.inAppUpdateFailed) {
+        if (!mounted) return;
+        await updateService.showForceUpdateDialog(context);
+        return;
+      }
+    }
 
     if (!mounted) return;
 
@@ -51,7 +68,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.scaffoldBackground,
       body: SizedBox.expand(
         child: SafeArea(
           child: Padding(
@@ -82,13 +99,13 @@ class _SplashScreenState extends State<SplashScreen> {
                             width: 72,
                             height: 72,
                             decoration: BoxDecoration(
-                              gradient: AppColors.linerGradient,
+                              gradient: context.colors.linearGradient,
                               borderRadius: BorderRadius.circular(
                                 AppDimens.dimen16,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primary.withValues(
+                                  color: context.colors.primary.withValues(
                                     alpha: 0.35,
                                   ),
                                   blurRadius: 16,
@@ -99,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
                             child: const Icon(
                               Icons.account_balance_wallet_rounded,
                               size: 40,
-                              color: AppColors.white,
+                              color: Colors.white,
                             ),
                           );
                         },
@@ -116,7 +133,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           TextSpan(
                             text: "Kharch",
                             style: theme.textTheme.headlineMedium?.copyWith(
-                              color: AppColors.textPrimary,
+                              color: context.colors.textPrimary,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.5,
                             ),
@@ -124,7 +141,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           TextSpan(
                             text: "Mate",
                             style: theme.textTheme.headlineMedium?.copyWith(
-                              color: AppColors.primary,
+                              color: context.colors.primary,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.5,
                             ),
@@ -140,7 +157,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       "Track  •  Save  •  Grow",
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 2.0,
                       ),
@@ -161,14 +178,14 @@ class _SplashScreenState extends State<SplashScreen> {
                         return Container(
                           width: 180,
                           height: 180,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primaryBackground,
+                          decoration: BoxDecoration(
+                            color: context.colors.primaryBackground,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.savings_rounded,
                             size: 80,
-                            color: AppColors.primary,
+                            color: context.colors.primary,
                           ),
                         );
                       },
@@ -178,16 +195,51 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const Spacer(flex: 1),
 
-                // 3. Bottom Footer Quote
-                Text(
-                  "Better money habits\nfor a brighter tomorrow",
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.textHint,
-                    height: 1.45,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.3,
-                  ),
+                // 3. Bottom Footer Quote & Powered By
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Better money habits\nfor a brighter tomorrow",
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: context.colors.textHint,
+                        height: 1.45,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Powered by",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: context.colors.textHint,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Image.asset(
+                          'assets/images/nexora_lab_icon.png',
+                          width: 18,
+                          height: 18,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          "Nexora Lab",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: context.colors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: AppDimens.dimen16),

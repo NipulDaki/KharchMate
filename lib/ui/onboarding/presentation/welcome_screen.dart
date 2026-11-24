@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kharch_mate/resources/app_colors.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
 import 'package:kharch_mate/router/app_routes.dart';
 import 'package:kharch_mate/widgets/app_text_button.dart';
@@ -93,7 +93,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final illustrationSize = (size.width * 0.58).clamp(180.0, 240.0);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.scaffoldBackground,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -110,7 +110,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   child: Text(
                     "Skip",
                     style: theme.textTheme.titleSmall?.copyWith(
-                      color: AppColors.primary,
+                      color: context.colors.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -142,11 +142,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             width: illustrationSize,
                             height: illustrationSize,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryBackground,
+                              color: context.colors.primaryBackground,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primary.withValues(
+                                  color: context.colors.primary.withValues(
                                     alpha: 0.12,
                                   ),
                                   blurRadius: 28,
@@ -170,7 +170,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                                 Icon(
                                                   item.fallbackIcon,
                                                   size: 80,
-                                                  color: AppColors.primary,
+                                                  color: context.colors.primary,
                                                 ),
                                       ),
                                     )
@@ -183,7 +183,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                           (context, error, stackTrace) => Icon(
                                             item.fallbackIcon,
                                             size: 80,
-                                            color: AppColors.primary,
+                                            color: context.colors.primary,
                                           ),
                                     ),
                             ),
@@ -196,7 +196,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             item.title,
                             textAlign: TextAlign.center,
                             style: theme.textTheme.headlineMedium?.copyWith(
-                              color: AppColors.textPrimary,
+                              color: context.colors.textPrimary,
                               fontWeight: FontWeight.w700,
                               height: 1.25,
                             ),
@@ -213,7 +213,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               item.subtitle,
                               textAlign: TextAlign.center,
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
+                                color: context.colors.textSecondary,
                                 height: 1.5,
                               ),
                             ),
@@ -249,8 +249,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       height: 8,
                       decoration: BoxDecoration(
                         color: isActive
-                            ? AppColors.primary
-                            : AppColors.borderColor,
+                            ? context.colors.primary
+                            : context.colors.cardBorder,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -269,7 +269,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   borderRadius: AppDimens.dimen12,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   textStyle: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.white,
+                    color: Colors.white,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
                   ),

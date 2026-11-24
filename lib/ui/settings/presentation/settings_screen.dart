@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kharch_mate/di/service_locator.dart';
+import 'package:kharch_mate/extension/theme_extension.dart';
 import 'package:kharch_mate/helper/coach_mark_helper.dart';
+import 'package:kharch_mate/helper/currency_helper.dart';
 import 'package:kharch_mate/models/user_profile.dart';
 import 'package:kharch_mate/resources/app_colors.dart';
 import 'package:kharch_mate/resources/app_dimension.dart';
@@ -16,6 +18,7 @@ import 'package:kharch_mate/services/analytics_service.dart';
 import 'package:kharch_mate/services/database_service.dart';
 import 'package:kharch_mate/services/notification_service.dart';
 import 'package:kharch_mate/services/secure_storage_service.dart';
+import 'package:kharch_mate/services/theme_service.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -27,9 +30,9 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late final DatabaseService _dbService;
+  late final ThemeService _themeService;
   AdService? _adService;
   UserProfile? _userProfile;
-  // ignore: unused_field
   bool _isDarkMode = false;
   String _appVersion = '1.0';
   StreamSubscription<UserProfile>? _userProfileSubscription;
@@ -39,6 +42,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _dbService = serviceLocator<DatabaseService>();
+    _themeService = serviceLocator<ThemeService>();
+    _isDarkMode = _themeService.isDarkMode;
     _loadUserProfile();
     _loadAppVersion();
     _userProfileSubscription = _dbService.onUserProfileChanged.listen((
@@ -151,34 +156,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (_) {}
   }
 
-  // ignore: unused_element
   Future<void> _toggleDarkMode(bool value) async {
     setState(() => _isDarkMode = value);
     try {
-      await _dbService.updateDarkMode(value);
+      await _themeService.toggleDarkMode(value);
       _userProfile = _userProfile?.copyWith(isDarkMode: value);
     } catch (_) {}
   }
 
   Future<void> _showCurrencyPicker() async {
-    final currencies = [
-      {'code': 'INR', 'symbol': '₹', 'name': 'Indian Rupee'},
-      // {'code': 'USD', 'symbol': '\$', 'name': 'US Dollar'},
-      // {'code': 'EUR', 'symbol': '€', 'name': 'Euro'},
-      // {'code': 'GBP', 'symbol': '£', 'name': 'British Pound'},
-      // {'code': 'AED', 'symbol': 'د.إ', 'name': 'UAE Dirham'},
-      // {'code': 'CAD', 'symbol': 'C\$', 'name': 'Canadian Dollar'},
-      // {'code': 'AUD', 'symbol': 'A\$', 'name': 'Australian Dollar'},
-      // {'code': 'JPY', 'symbol': '¥', 'name': 'Japanese Yen'},
-    ];
+    final currencies = CurrencyHelper.supportedCurrencies;
+
+    final colors = context.colors;
 
     await showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      backgroundColor: AppColors.white,
+      backgroundColor: colors.cardBackground,
       builder: (ctx) {
+        final sheetColors = ctx.colors;
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
@@ -191,20 +189,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.borderColor,
+                      color: sheetColors.cardBorder,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     'Select Currency',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: sheetColors.textPrimary,
                     ),
                   ),
                 ),
@@ -214,36 +212,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     shrinkWrap: true,
                     itemCount: currencies.length,
                     separatorBuilder: (_, _) =>
-                        const Divider(height: 1, color: AppColors.dividerColor),
+                        Divider(height: 1, color: sheetColors.divider),
                     itemBuilder: (context, index) {
                       final item = currencies[index];
                       final isSelected =
-                          (_userProfile?.currencyCode ?? 'INR') == item['code'];
+                          (_userProfile?.currencyCode ?? 'INR') == item.code;
 
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: const Color(0xFFF0F4F8),
+                          backgroundColor: isSelected
+                              ? sheetColors.primaryBackground
+                              : sheetColors.cardBorder.withValues(alpha: 0.25),
                           child: Text(
-                            item['symbol']!,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
+                            item.symbol,
+                            style: TextStyle(
+                              fontSize: item.symbol.length > 2 ? 11 : 14,
+                              color: isSelected
+                                  ? sheetColors.primary
+                                  : sheetColors.textPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
                         title: Text(
-                          '${item['name']} (${item['code']})',
+                          '${item.name} (${item.code})',
                           style: TextStyle(
                             fontWeight: isSelected
                                 ? FontWeight.w700
                                 : FontWeight.w500,
-                            color: AppColors.textPrimary,
+                            color: sheetColors.textPrimary,
                           ),
                         ),
                         trailing: isSelected
-                            ? const Icon(
+                            ? Icon(
                                 Icons.check_circle_rounded,
-                                color: AppColors.primary,
+                                color: sheetColors.primary,
                               )
                             : null,
                         onTap: () async {
@@ -253,8 +256,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               await _dbService.getUserProfile() ??
                               UserProfile.empty();
                           final updated = current.copyWith(
-                            currencyCode: item['code'],
-                            currencySymbol: item['symbol'],
+                            currencyCode: item.code,
+                            currencySymbol: item.symbol,
                           );
                           final saved = await _dbService.saveUserProfile(
                             updated,
@@ -415,18 +418,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
     final userName = _userProfile?.name.trim().isNotEmpty == true
         ? _userProfile!.name
-        : 'Nipul Daki';
+        : 'Nexora Lab';
     final userEmail = _userProfile?.email?.trim().isNotEmpty == true
         ? _userProfile!.email!
-        : 'nipul@example.com';
+        : 'supportnexoralab@gmail.com';
     final currencyDisplay =
-        '${_userProfile?.currencyCode ?? 'INR'} (${_userProfile?.currencySymbol ?? '₹'})';
+        '${_userProfile?.currencyCode ?? 'INR'} (${CurrencyHelper.normalizeSymbol(_userProfile?.currencySymbol ?? '₹')})';
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.scaffoldBackground,
       bottomNavigationBar: _buildBottomNav(context),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
+        backgroundColor: colors.primary,
         shape: const CircleBorder(),
         elevation: 4,
         onPressed: () {
@@ -448,7 +452,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 'Settings',
                 style: theme.textTheme.headlineMedium?.copyWith(
-                  color: AppColors.textPrimary,
+                  color: colors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -468,9 +472,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Settings Options Group Card
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: colors.cardBackground,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderColor),
+                  border: Border.all(color: colors.cardBorder),
                 ),
                 child: Column(
                   children: [
@@ -534,10 +538,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: AppColors.dividerColor,
                     ),
 
-                    // 4. Dark Mode Switch (Commented out)
-                    /*
+                    // 4. Dark Mode Switch
                     _buildSwitchTile(
-                      icon: Icons.nightlight_round_outlined,
+                      icon: _isDarkMode
+                          ? Icons.nightlight_round
+                          : Icons.light_mode_rounded,
                       title: 'Dark Mode',
                       value: _isDarkMode,
                       onChanged: _toggleDarkMode,
@@ -547,7 +552,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       indent: 64,
                       color: AppColors.dividerColor,
                     ),
-                    */
 
                     // 5. Export Data (Commented out)
                     /*
@@ -740,21 +744,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       'KharchMate',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                        color: colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       'Version $_appVersion',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textHint,
+                        color: colors.textHint,
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Powered by',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: colors.textHint,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Image.asset(
+                          'assets/images/nexora_lab_icon.png',
+                          width: 20,
+                          height: 20,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Nexora Lab',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -769,8 +803,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildUserProfileCard(String name, String email) {
+    final colors = context.colors;
     return Material(
-      color: AppColors.white,
+      color: colors.cardBackground,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: () {
@@ -781,7 +816,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borderColor),
+            border: Border.all(color: colors.cardBorder),
           ),
           child: Row(
             children: [
@@ -806,26 +841,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       email,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.textPrimary,
+                color: colors.textHint,
                 size: 22,
               ),
             ],
@@ -1073,16 +1108,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     if (!_adService!.isRewardedAdReady) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Video ad is preparing. Please try again in a few moments.',
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppColors.primary),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading video ad...',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          backgroundColor: AppColors.primary,
-          duration: Duration(seconds: 2),
         ),
       );
-      _adService!.loadRewardedAd();
+
+      _adService!.loadRewardedAd(
+        onLoaded: () {
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+            _playRewardedAd();
+          }
+        },
+        onFailed: (error) {
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Video ad could not be loaded. Please check your internet.'),
+                backgroundColor: AppColors.expense,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        },
+      );
       return;
     }
 
@@ -1284,6 +1355,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Widget? trailing,
     VoidCallback? onTap,
   }) {
+    final colors = context.colors;
+    final defaultIconBg =
+        context.isDarkMode ? const Color(0xFF1E2B40) : const Color(0xFFF0F4F8);
+
     return InkWell(
       key: key,
       onTap: onTap,
@@ -1296,13 +1371,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: iconBackgroundColor ?? const Color(0xFFF0F4F8),
+                color: iconBackgroundColor ?? defaultIconBg,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
                 size: 20,
-                color: iconColor ?? AppColors.textPrimary,
+                color: iconColor ?? colors.textPrimary,
               ),
             ),
             const SizedBox(width: 14),
@@ -1316,16 +1391,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: titleColor ?? AppColors.textPrimary,
+                      color: titleColor ?? colors.textPrimary,
                     ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
@@ -1335,9 +1410,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (trailing != null)
               trailing
             else if (showChevron)
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.textPrimary,
+                color: colors.textHint,
                 size: 22,
               ),
           ],
@@ -1346,13 +1421,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ignore: unused_element
   Widget _buildSwitchTile({
     required IconData icon,
     required String title,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final colors = context.colors;
+    final defaultIconBg =
+        context.isDarkMode ? const Color(0xFF1E2B40) : const Color(0xFFF0F4F8);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
@@ -1360,26 +1438,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF0F4F8),
+            decoration: BoxDecoration(
+              color: defaultIconBg,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 20, color: AppColors.textPrimary),
+            child: Icon(icon, size: 20, color: colors.textPrimary),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: colors.textPrimary,
               ),
             ),
           ),
           CupertinoSwitch(
             value: value,
-            activeTrackColor: AppColors.primary,
+            activeTrackColor: colors.primary,
             onChanged: onChanged,
           ),
         ],
@@ -1391,7 +1469,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 8.0,
-      color: AppColors.white,
+      color: context.colors.bottomNavBackground,
       elevation: 8,
       child: SizedBox(
         height: 60,
@@ -1427,8 +1505,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     VoidCallback onTap,
   ) {
     final color = isSelected
-        ? AppColors.bottomNavSelected
-        : AppColors.bottomNavUnselected;
+        ? context.colors.bottomNavSelected
+        : context.colors.bottomNavUnselected;
 
     return InkWell(
       onTap: onTap,
